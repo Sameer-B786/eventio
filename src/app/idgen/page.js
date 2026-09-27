@@ -9,15 +9,9 @@ export default function EventioWizardPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [purpose, setPurpose] = useState(null);
-  const [events, setEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
 
   useEffect(() => {
-    fetch('/api/events')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setEvents(data))
-      .catch(console.error);
-      
     fetch('/api/events/all')
       .then(res => res.ok ? res.json() : [])
       .then(data => setAllEvents(data))
@@ -170,81 +164,6 @@ export default function EventioWizardPage() {
         </div>
       </div>
 
-      {/* Created Event Workspaces Section */}
-      {step === 1 && events.length > 0 && (
-        <div className="max-w-4xl w-full mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="flex items-center justify-between mb-6 px-4 md:px-0">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-purple-600" /> Your Event Workspaces
-            </h2>
-            <Link href="/idgen/events/new" className="text-sm font-medium text-purple-600 hover:text-purple-700 bg-purple-50 px-4 py-2 rounded-full transition-colors">
-              + New Workspace
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 md:px-0">
-            {events.map((event) => {
-              const now = new Date();
-              const start = new Date(event.startTime);
-              const end = new Date(event.endTime);
-              
-              let statusLabel = "Closed";
-              let badgeColor = "bg-gray-600/80";
-              let isLive = false;
-
-              if (now < start) {
-                const diffMs = start.getTime() - now.getTime();
-                const diffMins = Math.floor(diffMs / 60000);
-                if (diffMins <= 120) {
-                  statusLabel = `Starting in ${diffMins}m`;
-                } else {
-                  statusLabel = "Upcoming";
-                }
-                badgeColor = "bg-green-500 text-white"; // User requested green for starting soon
-              } else if (now >= start && now <= end) {
-                statusLabel = "Live Now";
-                badgeColor = "bg-red-500 text-white"; // User requested red for live
-                isLive = true;
-              } else if (now > end) {
-                statusLabel = "Event Expired";
-                badgeColor = "bg-gray-600/80 text-white";
-              }
-
-              return (
-                <button
-                  key={event.id}
-                  onClick={() => router.push(`/idgen/workspace/${event.id}`)}
-                  className="flex flex-col text-left bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-purple-400 hover:shadow-md transition-all overflow-hidden group relative"
-                >
-                  <div className="h-24 w-full bg-cover bg-center relative" style={{ backgroundImage: `url(${event.bannerUrl})` }}>
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                    
-                    <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${badgeColor}`}>
-                      {isLive && (
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                        </span>
-                      )}
-                      {statusLabel}
-                    </span>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 line-clamp-1 mb-1 group-hover:text-purple-700 transition-colors">{event.name}</h3>
-                    <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {event.hostedBy}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(event.startTime).toLocaleDateString()}
-                    </p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Explore All Public Events Section */}
       {step === 1 && allEvents.length > 0 && (
         <div className="max-w-4xl w-full mt-12 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -252,6 +171,9 @@ export default function EventioWizardPage() {
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Calendar className="w-6 h-6 text-blue-600" /> Explore Events
             </h2>
+            <Link href="/idgen/events/new" className="text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-full transition-colors">
+              + New Workspace
+            </Link>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 md:px-0">

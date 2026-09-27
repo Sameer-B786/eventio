@@ -59,25 +59,17 @@ export default function EventWorkspacePage({ params }) {
         setEventData(data);
         checkActive(data);
       } catch (err) {
-        console.warn("Using mock event data for demo purposes");
-        const mockData = {
-          id: eventId,
-          name: "Sample Tech Event Workspace",
-          description: "A space to interact dynamically.",
-          hostedBy: "Eventio Admin",
-          bannerUrl: "https://via.placeholder.com/800x200",
-          startTime: new Date(Date.now() - 3600000).toISOString(),
-          endTime: new Date(Date.now() + 7200000).toISOString(),
-        };
-        setEventData(mockData);
-        checkActive(mockData);
+        console.error("Event not found or unauthorized");
+        setEventData(null);
       } finally {
         setLoading(false);
       }
     };
     fetchEvent();
   }, [eventId]);
+  
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Workspace...</div>;
+  if (!eventData) return <div className="p-8 text-center text-red-500 font-bold">Workspace not found or has been deleted.</div>;
 
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col md:flex-row gap-4 bg-gray-50">
@@ -122,7 +114,7 @@ export default function EventWorkspacePage({ params }) {
             
             <div className={`p-3 rounded-lg border flex flex-col shrink-0 ${statusInfo.color}`}>
               <div className="flex items-center gap-3">
-                {statusInfo.isLive ? <Clock className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                {statusInfo.isLive ? <Clock className="h-5 w-5" /> : <Info className="h-5 w-5" />}
                 <div className="text-sm">
                   <p className="font-semibold leading-tight">Workspace Status: {statusInfo.label}</p>
                   <p className="opacity-90 text-xs mt-0.5">
@@ -134,7 +126,7 @@ export default function EventWorkspacePage({ params }) {
               </div>
               {statusInfo.willDelete && (
                 <div className="mt-2 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                  ⚠️ This workspace will be automatically permanently deleted 2 hours after expiration.
+                  this workspace will get automatically deleted after 2 hours of expiration
                 </div>
               )}
             </div>
@@ -143,14 +135,14 @@ export default function EventWorkspacePage({ params }) {
 
         {/* Real-time Chat */}
         <Card className="flex-1 flex flex-col overflow-hidden shadow-sm min-h-0">
-           <ChatRoom eventId={eventId} isActive={isEventActive} messages={messages} />
+           <ChatRoom eventId={eventId} isActive={statusInfo.isLive} messages={messages} />
         </Card>
       </div>
 
       {/* Right Sidebar - Polls */}
       <div className="w-full md:w-80 lg:w-96 flex flex-col shrink-0">
         <Card className="flex-1 flex flex-col overflow-hidden shadow-sm p-4">
-          <PollsPanel eventId={eventId} isActive={isEventActive} polls={polls} />
+          <PollsPanel eventId={eventId} isActive={statusInfo.isLive} polls={polls} />
         </Card>
       </div>
 
