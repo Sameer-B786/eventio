@@ -1,6 +1,11 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useGeneratorStore } from '@/store/useGeneratorStore';
+import Konva from 'konva';
+import jsPDF from 'jspdf';
+import JSZip from 'jszip';
+import { generateBarcodeDataUrl } from '@/lib/barcodeGenerator';
+import { Button } from '@/components/ui/button';
 
 export default function BulkRenderEngine() {
   const records = useGeneratorStore((state) => state.records);
@@ -8,89 +13,148 @@ export default function BulkRenderEngine() {
   const isGenerating = useGeneratorStore((state) => state.isGenerating);
   const setIsGenerating = useGeneratorStore((state) => state.setIsGenerating);
   
-  const [status, setStatus] = useState(null); // PENDING, PROCESSING, COMPLETED, FAILED
+  const [status, setStatus] = useState(null); // e.g., 'Processing 1/50', 'Completed'
   const [downloadUrl, setDownloadUrl] = useState(null);
-  const [jobId, setJobId] = useState(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_AWS_API_URL;
-
-  // Polling effect
-  useEffect(() => {
-    let interval;
-    if (jobId && (status === 'PENDING' || status === 'PROCESSING')) {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch(`${API_URL}/status/${jobId}`);
-          if (res.ok) {
-            const data = await res.json();
-            setStatus(data.status);
-            if (data.status === 'COMPLETED') {
-              setDownloadUrl(data.outputUrl);
-              setIsGenerating(false);
-            } else if (data.status === 'FAILED') {
-              setIsGenerating(false);
-              alert("Backend generation failed.");
-            }
-          }
-        } catch (err) {
-          console.error("Polling error:", err);
-        }
-      }, 3000); // Poll every 3 seconds
-    }
-    return () => clearInterval(interval);
-  }, [jobId, status, API_URL, setIsGenerating]);
+  // Helper to load an image asynchronously
+  const loadImage = (src) => new Promise((resolve) => {
+    const img = new window.Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // Ignore errors so it doesn't break bulk generation
+    img.src = src;
+  });
 
   const executeBatchGeneration = async () => {
-    if (!API_URL) {
-      alert("AWS API URL is not configured. Please set NEXT_PUBLIC_AWS_API_URL.");
-      return;
-    }
     if (!records || records.length === 0 || !templateJson) return;
 
     setIsGenerating(true);
-    setStatus('STARTING UPLOAD...');
+    setStatus('Initializing generation...');
     setDownloadUrl(null);
 
     try {
-      // 1. Convert data to Blobs
-      // (Using papa parse internally or just JSON stringify for now. The backend expects CSV or JSON, we will upload JSON for simplicity if it handles it, but backend uses Papa.parse, so let's convert to CSV string)
-      const csvContent = [Object.keys(records[0]).join(",")].concat(records.map(r => Object.values(r).join(","))).join("\n");
-      const csvBlob = new Blob([csvContent], { type: 'text/csv' });
-      const jsonBlob = new Blob([JSON.stringify(templateJson)], { type: 'application/json' });
+      const zip = new JSZip();
+      const { canvas, elements } = templateJson;
+      const width = canvas.width;
+      const height = canvas.height;
 
-      // 2. Get Presigned URLs
-      const resCsv = await fetch(`${API_URL}/upload-url`, {
-        method: 'POST', body: JSON.stringify({ fileName: 'data.csv', contentType: 'text/csv' })
-      }).then(r => r.json());
+      // Create a hidden container for Konva
+      const container = document.createElement('div');
+      container.style.display = 'none';
+      document.body.appendChild(container);
+
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        setStatus(`Processing ID card ${i + 1} of ${records.length}...`);
+
+        const stage = new Konva.Stage({
+          container: container,
+          width: width,
+          height: height,
+        });
+
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        // 1. Draw Background
+        layer.add(new Konva.Rect({
+          width, height,
+          fill: canvas.backgroundColor || '#FFFFFF'
+        }));
+
+        // 2. Draw Elements
+        const promises = elements.map(async (element) => {
+          if (element.type === 'DYNAMIC_TEXT' || element.type === 'TEXT') {
+            const textValue = record[element.fieldMapping] || element.text || '';
+            layer.add(new Konva.Text({
+              x: element.x,
+              y: element.y,
+              text: String(textValue),
+              fontSize: element.fontSize,
+              fontFamily: element.fontFamily || 'Arial',
+              fill: element.fill || '#000000',
+              align: element.align || 'left',
+              width: element.width,
+            }));
+          }
+
+          if (element.type === 'IMAGE' || element.type === 'DYNAMIC_IMAGE') {
+            const src = record[element.fieldMapping] || element.src;
+            if (src) {
+              const imgObj = await loadImage(src);
+              if (imgObj) {
+                layer.add(new Konva.Image({
+                  x: element.x,
+                  y: element.y,
+                  width: element.width,
+                  height: element.height,
+                  image: imgObj,
+                  cornerRadius: element.borderRadius || 0
+                }));
+              }
+            }
+          }
+
+          if (element.type === 'DYNAMIC_BARCODE') {
+            const val = record[element.fieldMapping];
+            if (val) {
+              const dataUrl = generateBarcodeDataUrl(val, element.barcodeFormat || "CODE128");
+              const imgObj = await loadImage(dataUrl);
+              if (imgObj) {
+                layer.add(new Konva.Image({
+                  x: element.x,
+                  y: element.y,
+                  width: element.width,
+                  height: element.height,
+                  image: imgObj,
+                }));
+              }
+            }
+          }
+        });
+
+        await Promise.all(promises);
+
+        // Force a synchronous draw
+        layer.draw();
+
+        // Capture canvas
+        const dataUrl = stage.toDataURL({ pixelRatio: 2 }); // High quality
+
+        // Create PDF (convert pixels to points/mm. Let's just use exact pixel size or standard ratio)
+        // jsPDF takes points. 1 px = 0.75 points, but let's just make the PDF the exact px size
+        const pdf = new jsPDF({
+          orientation: width > height ? 'l' : 'p',
+          unit: 'px',
+          format: [width, height]
+        });
+        
+        pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+        
+        const pdfBlob = pdf.output('blob');
+        
+        // Add to ZIP (name by some unique field, like Name, ID, or index)
+        const fileName = (record.Name || record.ID || record.name || record.id || `Card_${i+1}`).replace(/[^a-zA-Z0-9]/g, '_');
+        zip.file(`${fileName}.pdf`, pdfBlob);
+
+        stage.destroy();
+      }
+
+      document.body.removeChild(container);
+
+      setStatus('Compressing ZIP file...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
       
-      const resJson = await fetch(`${API_URL}/upload-url`, {
-        method: 'POST', body: JSON.stringify({ fileName: 'template.json', contentType: 'application/json' })
-      }).then(r => r.json());
-
-      // 3. Upload to S3
-      setStatus('UPLOADING TO S3...');
-      await fetch(resCsv.uploadUrl, { method: 'PUT', body: csvBlob, headers: { 'Content-Type': 'text/csv' }});
-      await fetch(resJson.uploadUrl, { method: 'PUT', body: jsonBlob, headers: { 'Content-Type': 'application/json' }});
-
-      // 4. Trigger Generation Job
-      setStatus('QUEUING JOB...');
-      const genRes = await fetch(`${API_URL}/generate`, {
-        method: 'POST',
-        body: JSON.stringify({
-          csvKey: resCsv.key,
-          templateKey: resJson.key,
-          schemaType: window.location.pathname.includes('event-pass') ? 'eventpass' : 'idcard'
-        })
-      }).then(r => r.json());
-
-      setJobId(genRes.jobId);
-      setStatus(genRes.status); // Should be PENDING
+      const zipUrl = URL.createObjectURL(zipBlob);
+      setDownloadUrl(zipUrl);
+      setStatus('COMPLETED');
 
     } catch (err) {
-      console.error("Error during cloud generation", err);
-      alert("Failed to start cloud generation.");
-      setIsGenerating(false);
+      console.error("Error during client generation", err);
+      alert("Failed to generate ID cards.");
       setStatus(null);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -99,35 +163,40 @@ export default function BulkRenderEngine() {
   }
 
   return (
-    <div className="p-6 border border-gray-100 rounded-xl bg-gray-50 flex flex-col items-center">
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">Cloud Generation</h3>
-      <p className="mb-6 text-gray-600">{records.length} records ready to be processed via AWS.</p>
-      
-      {isGenerating ? (
-        <div className="w-full max-w-md text-center">
-           <div className="animate-pulse bg-indigo-100 text-indigo-800 px-4 py-2 rounded-lg font-bold">
-             Status: {status}
-           </div>
-           <p className="text-xs text-gray-500 mt-2">Please wait, your job is running in the cloud...</p>
+    <div className="flex flex-col gap-4 p-4 bg-gray-50 border rounded-xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-gray-800">Ready to Generate</h3>
+          <p className="text-sm text-gray-500">
+            {records.length} records • {templateJson.elements.length} layout elements
+          </p>
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-4">
-          {downloadUrl && (
-             <a href={downloadUrl} download className="px-6 py-2 bg-green-500 text-white font-bold rounded-lg shadow hover:bg-green-600 transition-all text-center w-full">
-               ⬇️ Download ZIP Archive
-             </a>
-          )}
-          <button 
-            onClick={executeBatchGeneration}
-            className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow hover:bg-indigo-700 hover:shadow-lg transition-all"
+        
+        {downloadUrl ? (
+          <Button asChild className="bg-green-600 hover:bg-green-700">
+            <a href={downloadUrl} download="eventio_id_cards.zip">
+              Download ZIP
+            </a>
+          </Button>
+        ) : (
+          <Button 
+            onClick={executeBatchGeneration} 
+            disabled={isGenerating}
+            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]"
           >
-            {downloadUrl ? 'Generate Again' : 'Generate via AWS'}
-          </button>
+            {isGenerating ? 'Generating...' : 'Start Generation'}
+          </Button>
+        )}
+      </div>
+
+      {status && (
+        <div className="text-sm px-3 py-2 rounded-md font-medium text-gray-700 bg-blue-50 border border-blue-100 flex items-center justify-between">
+           <span>Status: </span>
+           <span className={status === 'COMPLETED' ? 'text-green-600 font-bold' : 'text-blue-600 animate-pulse'}>
+             {status}
+           </span>
         </div>
       )}
     </div>
   );
 }
-
-
-
