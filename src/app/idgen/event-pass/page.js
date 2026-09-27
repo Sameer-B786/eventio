@@ -21,6 +21,16 @@ export default function EventPassGeneratorPage() {
   const templateJson = useGeneratorStore((state) => state.templateJson);
   const records = useGeneratorStore((state) => state.records);
 
+  const [myEvents, setMyEvents] = React.useState([]);
+  const [selectedEventId, setSelectedEventId] = React.useState("");
+
+  React.useEffect(() => {
+    fetch('/api/events')
+      .then(res => res.ok ? res.json() : [])
+      .then(events => setMyEvents(events))
+      .catch(console.error);
+  }, []);
+
   const previewRecord = records?.[0] || null;
 
   return (
@@ -45,18 +55,33 @@ export default function EventPassGeneratorPage() {
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6">
             <div>
-              <h2 className="text-lg font-bold text-gray-800">1. Data & Template Setup</h2>
-              <p className="text-sm text-gray-500">Upload your attendees and design</p>
+              <h2 className="text-lg font-bold text-gray-800">1. Select Target Event</h2>
+              <p className="text-sm text-gray-500 mb-2">Choose the event to generate passes for</p>
+              <select 
+                className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+              >
+                <option value="" disabled>-- Select an event --</option>
+                {myEvents.map(ev => (
+                  <option key={ev.id} value={ev.id}>{ev.name} (Host: {ev.hostedBy})</option>
+                ))}
+              </select>
+              {myEvents.length === 0 && <p className="text-xs text-red-500 mt-2">You are not a host or volunteer for any active events.</p>}
             </div>
-            
-            <div className="flex flex-col gap-6">
-              <ExcelDropzone schemaType={schemaType} />
-              <TemplateJsonUploader />
+
+            <div className="border-t pt-6">
+              <h2 className="text-lg font-bold text-gray-800">2. Data & Template Setup</h2>
+              <p className="text-sm text-gray-500 mb-4">Upload your attendees and design</p>
+              <div className="flex flex-col gap-6">
+                <ExcelDropzone schemaType={schemaType} />
+                <TemplateJsonUploader />
+              </div>
             </div>
             
             <div className="border-t pt-6 mt-2">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">2. Generate</h2>
-              <BulkRenderEngine />
+              <h2 className="text-lg font-bold text-gray-800 mb-4">3. Generate</h2>
+              {selectedEventId ? <BulkRenderEngine /> : <p className="text-sm text-red-500">Please select an event first.</p>}
             </div>
           </div>
         </div>
