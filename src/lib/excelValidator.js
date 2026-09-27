@@ -33,6 +33,12 @@ export const schemas = {
     event_name: { required: true, type: 'string' },
     attendee_name: { required: true, type: 'string' },
     role: { required: true, type: 'role' },
+  },
+  certificate: {
+    participant_name: { required: true, type: 'string' },
+    event_name: { required: false, type: 'string' },
+    team_name: { required: false, type: 'string' },
+    date: { required: false, type: 'string' }
   }
 };
 

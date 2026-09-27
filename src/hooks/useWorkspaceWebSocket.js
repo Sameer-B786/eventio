@@ -13,8 +13,14 @@ export function useWorkspaceWebSocket(eventId) {
 
     const WSS_URL = process.env.NEXT_PUBLIC_AWS_WSS_URL;
     if (!WSS_URL) {
-      console.warn("NEXT_PUBLIC_AWS_WSS_URL is missing. Real-time updates disabled.");
-      return;
+      console.warn("NEXT_PUBLIC_AWS_WSS_URL is missing. Falling back to 3-second polling for real-time updates.");
+      
+      const pollInterval = setInterval(() => {
+        fetch(`/api/events/${eventId}/messages`).then(r => r.json()).then(setMessages).catch(() => {});
+        fetch(`/api/events/${eventId}/polls`).then(r => r.json()).then(setPolls).catch(() => {});
+      }, 3000);
+
+      return () => clearInterval(pollInterval);
     }
 
     // Connect to AWS API Gateway WebSocket, passing eventId so Lambda can map it

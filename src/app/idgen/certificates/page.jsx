@@ -1,165 +1,82 @@
 "use client";
+import React from 'react';
+import dynamic from 'next/dynamic';
+import ExcelDropzone from '@/components/upload/ExcelDropzone';
+import TemplateJsonUploader from '@/components/upload/TemplateJsonUploader';
+import BulkRenderEngine from '@/components/rendering/BulkRenderEngine';
+import { useGeneratorStore } from '@/store/useGeneratorStore';
 
-import { useState } from "react";
-import * as XLSX from "xlsx";
-import JSZip from "jszip";
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileSpreadsheet, FileJson, Download, Eye, Loader2 } from "lucide-react";
+// SSR Guard for Konva
+const KonvaPreviewStage = dynamic(
+  () => import('@/components/canvas/KonvaPreviewStage'),
+  { ssr: false }
+);
 
-export default function BulkCertificatesPage() {
-  const [data, setData] = useState([]);
-  const [template, setTemplate] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
+export default function CertificatesGeneratorPage() {
+  const router = useRouter();
+  const schemaType = 'certificate';
+  const templateJson = useGeneratorStore((state) => state.templateJson);
+  const records = useGeneratorStore((state) => state.records);
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const bstr = evt.target.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const parsedData = XLSX.utils.sheet_to_json(ws);
-      setData(parsedData);
-      if (parsedData.length > 0) setPreviewData(parsedData[0]);
-    };
-    reader.readAsBinaryString(file);
-  };
-
-  const handleTemplateUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const json = JSON.parse(evt.target.result);
-        setTemplate(json);
-      } catch (err) {
-        alert("Invalid JSON format");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const generateCertificates = async () => {
-    if (!template || data.length === 0) return;
-    setLoading(true);
-    
-    try {
-      const zip = new JSZip();
-      
-      // In a real application, you would render each certificate to a canvas 
-      // using Konva in the background, convert to blob, and add to zip.
-      // For this implementation we will generate basic text files or mock images 
-      // if Konva headless rendering isn't set up yet.
-      
-      for (let i = 0; i < data.length; i++) {
-        const participant = data[i];
-        const name = participant.Name || participant.name || "Participant";
-        const team = participant.Team || participant.team || "";
-        
-        // Mock generation - we would use a hidden canvas here
-        const certContent = JSON.stringify({
-          ...template,
-          participantName: name,
-          teamName: team,
-        }, null, 2);
-        
-        zip.file(`${name.replace(/\s+/g, '_')}_certificate.json`, certContent);
-      }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = window.URL.createObjectURL(content);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "certificates.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate certificates");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const previewRecord = records?.[0] || null;
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 flex flex-col md:flex-row gap-6">
-      <div className="w-full md:w-1/3 flex flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Bulk Certificates</CardTitle>
-            <CardDescription>Upload participant data and a JSON template to generate certificates in bulk.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            
-            <div className="space-y-2">
-              <Label htmlFor="data-upload" className="flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel / CSV Data
-              </Label>
-              <Input id="data-upload" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileUpload} />
-              {data.length > 0 && <p className="text-xs text-gray-500 mt-1">{data.length} records loaded.</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="template-upload" className="flex items-center gap-2">
-                <FileJson className="h-4 w-4 text-blue-600" /> JSON Template
-              </Label>
-              <Input id="template-upload" type="file" accept=".json" onChange={handleTemplateUpload} />
-              {template && <p className="text-xs text-gray-500 mt-1">Template loaded successfully.</p>}
-            </div>
-
-            <Button 
-              className="w-full bg-indigo-600 hover:bg-indigo-700" 
-              disabled={data.length === 0 || !template || loading}
-              onClick={generateCertificates}
-            >
-              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Download className="w-4 h-4 mr-2" /> Generate ZIP</>}
-            </Button>
-
-          </CardContent>
-        </Card>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center gap-4 mb-4">
+        <button 
+          onClick={() => router.back()} 
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors shadow-sm text-gray-600"
+          title="Go Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Certificate Generation</h1>
+          <p className="text-gray-500">Upload participant data and design template to generate certificates.</p>
+        </div>
       </div>
 
-      <div className="w-full md:w-2/3">
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2"><Eye className="h-5 w-5" /> Live Preview</CardTitle>
-            <CardDescription>Previewing first record from the uploaded data</CardDescription>
-          </CardHeader>
-          <CardContent className="bg-gray-50 m-4 rounded-xl border flex items-center justify-center min-h-[400px]">
-             {!template || !previewData ? (
-               <div className="text-gray-400 text-sm text-center">
-                 Upload both data and template to see preview
-               </div>
-             ) : (
-               <div className="relative bg-white shadow-lg border p-8 w-[600px] h-[400px] flex flex-col items-center justify-center text-center space-y-6">
-                 {/* This would ideally be rendered by React-Konva using the template schema */}
-                 <h2 className="text-3xl font-serif text-gray-800">Certificate of Participation</h2>
-                 <p className="text-gray-500">This is proudly presented to</p>
-                 <h1 className="text-5xl font-bold text-indigo-700 font-serif">
-                   {previewData.Name || previewData.name || "Participant Name"}
-                 </h1>
-                 {(previewData.Team || previewData.team) && (
-                   <h3 className="text-xl text-gray-600">Team: {previewData.Team || previewData.team}</h3>
-                 )}
-                 <div className="mt-8 text-xs text-gray-400 border-t pt-4 w-full">
-                   (Preview rendered from generic template styles)
-                 </div>
-               </div>
-             )}
-          </CardContent>
-        </Card>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* Left Column: Setup */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">1. Data & Template Setup</h2>
+              <p className="text-sm text-gray-500">Upload your participants and design</p>
+            </div>
+            
+            <div className="flex flex-col gap-6">
+              <ExcelDropzone schemaType={schemaType} />
+              <TemplateJsonUploader />
+            </div>
+            
+            <div className="border-t pt-6 mt-2">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">2. Generate</h2>
+              <BulkRenderEngine format="A4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Preview */}
+        <div className="w-full lg:w-2/3 flex flex-col">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex-1 flex flex-col">
+            <h2 className="text-lg font-bold mb-4 text-gray-800">Live Preview</h2>
+            <div className="flex-1 flex items-center justify-center bg-gray-50 p-4 border border-gray-200 rounded-xl overflow-auto min-h-[500px]">
+              {templateJson ? (
+                <KonvaPreviewStage templateJson={templateJson} record={previewRecord} />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400 h-full w-full min-h-[300px]">
+                   <p>Upload a JSON template to see preview</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

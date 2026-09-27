@@ -7,7 +7,7 @@ import JSZip from 'jszip';
 import { generateBarcodeDataUrl } from '@/lib/barcodeGenerator';
 import { Button } from '@/components/ui/button';
 
-export default function BulkRenderEngine() {
+export default function BulkRenderEngine({ format = 'CR80' }) {
   const records = useGeneratorStore((state) => state.records);
   const templateJson = useGeneratorStore((state) => state.templateJson);
   const isGenerating = useGeneratorStore((state) => state.isGenerating);
@@ -121,11 +121,16 @@ export default function BulkRenderEngine() {
         // Capture canvas
         const dataUrl = stage.toDataURL({ pixelRatio: 2 }); // High quality
 
-        // Create PDF using standard CR-80 physical dimensions (85.6mm x 53.98mm)
-        // This ensures the ID card prints perfectly on physical card printers.
+        // Determine physical dimensions based on format prop
         const isLandscape = width > height;
-        const cardWidthMm = isLandscape ? 85.6 : 53.98;
-        const cardHeightMm = isLandscape ? 53.98 : 85.6;
+        let cardWidthMm = isLandscape ? 85.6 : 53.98;
+        let cardHeightMm = isLandscape ? 53.98 : 85.6;
+
+        if (format === 'A4') {
+          // Standard A4 dimensions
+          cardWidthMm = isLandscape ? 297 : 210;
+          cardHeightMm = isLandscape ? 210 : 297;
+        }
 
         const pdf = new jsPDF({
           orientation: isLandscape ? 'l' : 'p',
@@ -133,13 +138,14 @@ export default function BulkRenderEngine() {
           format: [cardWidthMm, cardHeightMm]
         });
         
-        // Stretch/Scale the high-resolution canvas image exactly into the physical card bounds
+        // Stretch/Scale the high-resolution canvas image exactly into the physical paper bounds
         pdf.addImage(dataUrl, 'PNG', 0, 0, cardWidthMm, cardHeightMm);
         
         const pdfBlob = pdf.output('blob');
         
-        // Add to ZIP (name by some unique field, like Name, ID, or index)
-        const fileName = (record.Name || record.ID || record.name || record.id || `Card_${i+1}`).replace(/[^a-zA-Z0-9]/g, '_');
+        // Add to ZIP (name by participant name to easily identify the PDF)
+        const participantName = record.participant_name || record.attendee_name || record.name || record.Name || record.ID || record.id || `Document_${i+1}`;
+        const fileName = participantName.toString().replace(/[^a-zA-Z0-9_-]/g, '_');
         zip.file(`${fileName}.pdf`, pdfBlob);
 
         stage.destroy();
