@@ -4,6 +4,7 @@ import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { getSession } from "@/lib/session";
 
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME || "Eventio-Events";
+export const dynamic = 'force-dynamic';
 
 // GET /api/events/all
 // Publicly fetch all events (for the "Explore Events" section)

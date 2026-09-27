@@ -14,6 +14,7 @@ export async function POST(req) {
     
     // We prefix the file with the user's ID to keep their files isolated
     const userId = session.userInfo.email;
+    const safeUserId = userId.replace(/[^a-zA-Z0-9]/g, '_');
 
     const { filename, contentType } = await req.json();
 
@@ -22,10 +23,10 @@ export async function POST(req) {
     }
 
     // Generate a unique object key (file path in S3)
-    // E.g. uploads/john@doe.com/123e4567-e89b-12d3-a456-426614174000-banner.jpg
+    // E.g. uploads/john_doe_com/123e4567-e89b-12d3-a456-426614174000-banner.jpg
     const extension = filename.split('.').pop();
     const uniqueFilename = `${uuidv4()}.${extension}`;
-    const objectKey = `uploads/${encodeURIComponent(userId)}/${uniqueFilename}`;
+    const objectKey = `uploads/${safeUserId}/${uniqueFilename}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.S3_PROOFS_BUCKET,

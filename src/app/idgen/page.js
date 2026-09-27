@@ -12,7 +12,7 @@ export default function EventioWizardPage() {
   const [allEvents, setAllEvents] = useState([]);
 
   useEffect(() => {
-    fetch('/api/events/all')
+    fetch('/api/events/all', { cache: 'no-store', next: { revalidate: 0 } })
       .then(res => res.ok ? res.json() : [])
       .then(data => setAllEvents(data))
       .catch(console.error);
