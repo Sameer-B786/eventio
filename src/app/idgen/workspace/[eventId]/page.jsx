@@ -18,6 +18,13 @@ export default function EventWorkspacePage({ params }) {
   // Custom hook that manages real-time state via AWS API Gateway WebSockets
   const { messages, polls } = useWorkspaceWebSocket(eventId);
 
+  const checkActive = (data) => {
+    const now = new Date();
+    const start = new Date(data.startTime);
+    const end = new Date(data.endTime);
+    setIsEventActive(now >= start && now <= end);
+  };
+
   useEffect(() => {
     // In a real app, we fetch from /api/events/[eventId]
     // For demo/prototype purposes we mock the response if the fetch fails
@@ -47,14 +54,6 @@ export default function EventWorkspacePage({ params }) {
     };
     fetchEvent();
   }, [eventId]);
-
-  const checkActive = (data) => {
-    const now = new Date();
-    const start = new Date(data.startTime);
-    const end = new Date(data.endTime);
-    setIsEventActive(now >= start && now <= end);
-  };
-
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Workspace...</div>;
 
   return (

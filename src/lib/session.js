@@ -1,5 +1,10 @@
 import { cookies } from 'next/headers';
-import { decodeJwt } from 'jose';
+import { decodeJwt, jwtVerify, createRemoteJWKSet } from 'jose';
+
+// Fetch the JWKS from AWS Cognito
+const JWKS = createRemoteJWKSet(
+  new URL(`https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`)
+);
 
 export async function createSession({ idToken, accessToken }) {
   const cookieStore = await cookies();
@@ -30,9 +35,13 @@ export async function getSession() {
     const idToken = cookieStore.get('idToken')?.value;
     if (!idToken) return null;
     
-    const decoded = decodeJwt(idToken);
+    // Cryptographically verify the token
+    const { payload } = await jwtVerify(idToken, JWKS, {
+      issuer: `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
+    });
+    
     // Check if token is expired
-    if (decoded.exp * 1000 < Date.now()) {
+    if (payload.exp * 1000 < Date.now()) {
       return null;
     }
     
@@ -40,13 +49,13 @@ export async function getSession() {
     
     return {
       userInfo: {
-        email: decoded.email,
-        name: decoded.name || decoded.email?.split('@')[0],
+        email: payload.email,
+        name: payload.name || payload.email?.split('@')[0],
       },
       accessToken
     };
   } catch (error) {
-    console.error('Session Error:', error);
+    console.error('Session Error:', error.message);
     return null;
   }
 }

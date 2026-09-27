@@ -119,7 +119,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Handle any event with absolute ease</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto">We've simplified the entire event lifecycle into three frictionless steps so you can focus on delivering a great experience.</p>
+            <p className="text-gray-500 max-w-2xl mx-auto">We&apos;ve simplified the entire event lifecycle into three frictionless steps so you can focus on delivering a great experience.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

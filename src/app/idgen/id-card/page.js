@@ -16,19 +16,9 @@ const KonvaPreviewStage = dynamic(
 
 function IdCardGeneratorContent() {
   const searchParams = useSearchParams();
-  const initialSchema = searchParams.get('schema') || 'k12';
-  
-  const [schemaType, setSchemaType] = useState(initialSchema);
+  const schemaType = searchParams.get('schema') || 'k12';
   const templateJson = useGeneratorStore((state) => state.templateJson);
   const records = useGeneratorStore((state) => state.records);
-
-  // Update schema if URL changes
-  useEffect(() => {
-    if (searchParams.get('schema')) {
-      setSchemaType(searchParams.get('schema'));
-    }
-  }, [searchParams]);
-
   const previewRecord = records?.[0] || null;
 
   const schemaTitles = {

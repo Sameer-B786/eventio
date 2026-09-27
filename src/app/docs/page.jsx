@@ -112,7 +112,7 @@ export default function DocsPage() {
         <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-2">How to use it:</h3>
         <ul className="list-disc pl-5 space-y-2 text-gray-600">
           <li>Navigate to <strong>Bulk Certificates</strong>.</li>
-          <li>Upload your participant CSV/Excel data containing columns like "Name" and "Team".</li>
+          <li>Upload your participant CSV/Excel data containing columns like &quot;Name&quot; and &quot;Team&quot;.</li>
           <li>Upload your JSON template representing the certificate design.</li>
           <li>Check the Live Preview on the right panel to ensure the name renders correctly on the certificate design.</li>
           <li>Click <strong>Generate ZIP</strong>. The platform will process every row and automatically download a compressed `.zip` file containing all individual certificates!</li>

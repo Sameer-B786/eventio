@@ -24,26 +24,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    // --- MOCK USER BYPASS ---
-    if (email === 'mock@example.com' && password === 'mock123') {
-      const mockPayload = {
-        email: 'mock@example.com',
-        name: 'Mock User',
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 // valid for 24 hours
-      };
-      const encodedPayload = Buffer.from(JSON.stringify(mockPayload)).toString('base64url');
-      const mockIdToken = `eyJhbGciOiJub25lIn0.${encodedPayload}.`;
-      
-      await createSession({
-        email: 'mock@example.com',
-        name: 'Mock User',
-        accessToken: 'mock_access_token',
-        idToken: mockIdToken,
-      });
-
-      return NextResponse.json({ success: true });
-    }
-    // --- END MOCK USER BYPASS ---
 
     const client = new CognitoIdentityProviderClient({ region: REGION });
     const secretHash = calculateSecretHash(email);
