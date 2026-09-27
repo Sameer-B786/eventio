@@ -1,30 +1,66 @@
 import { NextResponse } from "next/server";
 import { broadcastToEvent } from "@/lib/awsWebsocket";
+import { dynamoDb } from "@/lib/dynamodb";
+import { ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
+import { getSession } from "@/lib/session";
 
-// In-memory store for demo
-export const pollsStore = {}; 
+const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME || "Eventio-Events";
+
+// Helper to find the event's Partition Key (creator's userId)
+async function findEventCreatorId(eventId) {
+  const { Items } = await dynamoDb.send(new ScanCommand({
+    TableName: EVENTS_TABLE,
+    FilterExpression: "eventId = :eid",
+    ExpressionAttributeValues: { ":eid": eventId }
+  }));
+  return Items && Items.length > 0 ? Items[0].userId : null;
+}
 
 export async function GET(req, { params }) {
-  const { eventId } = await params;
-  
-  if (eventId === "demo-event-123" && !pollsStore[eventId]) {
-    pollsStore[eventId] = [
-      { id: "p1", eventId, question: "Which framework are you most excited about?", options: [{ text: "Next.js", votes: 12 }, { text: "SvelteKit", votes: 5 }, { text: "Remix", votes: 3 }], createdAt: new Date().toISOString() }
-    ];
-  }
+  try {
+    const { eventId } = await params;
+    
+    const { Items } = await dynamoDb.send(new ScanCommand({
+      TableName: EVENTS_TABLE,
+      FilterExpression: "eventId = :eid",
+      ExpressionAttributeValues: { ":eid": eventId }
+    }));
 
-  const eventPolls = pollsStore[eventId] || [];
-  // Return sorted by newest first
-  return NextResponse.json([...eventPolls].reverse());
+    if (!Items || Items.length === 0) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    const event = Items[0];
+    const eventPolls = event.polls || [];
+    // Return sorted by newest first
+    return NextResponse.json([...eventPolls].reverse());
+  } catch (error) {
+    console.error("Failed to fetch polls", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
 
 export async function POST(req, { params }) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { eventId } = await params;
     const { question, options } = await req.json();
-    const pollId = uuidv4();
+
+    if (!question || !options || !Array.isArray(options) || options.length < 2) {
+      return NextResponse.json({ error: "Invalid poll data" }, { status: 400 });
+    }
     
+    // Only the host should be allowed to create polls. Let's enforce that!
+    const creatorId = await findEventCreatorId(eventId);
+    if (!creatorId) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    if (creatorId !== session.userInfo.email) {
+      return NextResponse.json({ error: "Only the event host can create polls" }, { status: 403 });
+    }
+
+    const pollId = uuidv4();
     const newPoll = {
       id: pollId,
       eventId,
@@ -33,32 +69,23 @@ export async function POST(req, { params }) {
       createdAt: new Date().toISOString(),
     };
 
-    try {
-      const { dynamoDb } = await import("@/lib/dynamodb");
-      const { PutCommand } = await import("@aws-sdk/lib-dynamodb");
-      const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME || "Eventio-Events";
-      
-      const pollParams = {
-        TableName: EVENTS_TABLE,
-        Item: {
-          PK: `EVENT#${eventId}`,
-          SK: `POLL#${pollId}`,
-          ...newPoll
-        }
-      };
-      await dynamoDb.send(new PutCommand(pollParams));
-    } catch (dbError) {
-      console.warn("Failed to save poll to DynamoDB, relying on memory store.", dbError.message);
-    }
-
-    if (!pollsStore[eventId]) pollsStore[eventId] = [];
-    pollsStore[eventId].push(newPoll);
+    // Append poll to the event's polls list securely
+    await dynamoDb.send(new UpdateCommand({
+      TableName: EVENTS_TABLE,
+      Key: { userId: creatorId, eventId: eventId },
+      UpdateExpression: "SET polls = list_append(if_not_exists(polls, :empty_list), :new_poll)",
+      ExpressionAttributeValues: {
+        ":new_poll": [newPoll],
+        ":empty_list": []
+      }
+    }));
 
     // Broadcast new poll
     await broadcastToEvent(eventId, "new-poll", newPoll);
 
     return NextResponse.json(newPoll, { status: 201 });
   } catch (error) {
+    console.error("Failed to create poll", error);
     return NextResponse.json({ error: "Failed to create poll" }, { status: 500 });
   }
 }

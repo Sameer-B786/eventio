@@ -1,47 +1,86 @@
 import { NextResponse } from "next/server";
 import { broadcastToEvent } from "@/lib/awsWebsocket";
+import { dynamoDb } from "@/lib/dynamodb";
+import { ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
+import { getSession } from "@/lib/session";
 
-const messagesStore = {}; // In-memory fallback for demo
+const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME || "Eventio-Events";
+
+// Helper to find the event's Partition Key (creator's userId)
+async function findEventCreatorId(eventId) {
+  const { Items } = await dynamoDb.send(new ScanCommand({
+    TableName: EVENTS_TABLE,
+    FilterExpression: "eventId = :eid",
+    ExpressionAttributeValues: { ":eid": eventId }
+  }));
+  return Items && Items.length > 0 ? Items[0].userId : null;
+}
 
 export async function GET(req, { params }) {
-  const { eventId } = await params;
-  
-  // In a real app, query DynamoDB: PK = EVENT#${eventId}, SK begins_with MSG#
-  if (eventId === "demo-event-123" && !messagesStore[eventId]) {
-    messagesStore[eventId] = [
-      { id: "1", eventId, userId: "sys", userName: "Admin", content: "Welcome to the Annual Tech Conference 2026 Workspace! Drop your questions here.", createdAt: new Date().toISOString() },
-      { id: "2", eventId, userId: "u1", userName: "Alice", content: "Hi! Check out the schedule here: https://example.com/schedule", createdAt: new Date().toISOString() }
-    ];
+  try {
+    const { eventId } = await params;
+    
+    const { Items } = await dynamoDb.send(new ScanCommand({
+      TableName: EVENTS_TABLE,
+      FilterExpression: "eventId = :eid",
+      ExpressionAttributeValues: { ":eid": eventId }
+    }));
+
+    if (!Items || Items.length === 0) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    const event = Items[0];
+    return NextResponse.json(event.chatMessages || []);
+  } catch (error) {
+    console.error("Failed to fetch messages", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-  const history = messagesStore[eventId] || [];
-  return NextResponse.json(history);
 }
 
 export async function POST(req, { params }) {
   try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { eventId } = await params;
     const body = await req.json();
+
+    if (!body.content || body.content.trim() === "") {
+      return NextResponse.json({ error: "Message content cannot be empty" }, { status: 400 });
+    }
     
+    // Retrieve the creator's ID so we can update the DynamoDB item
+    const creatorId = await findEventCreatorId(eventId);
+    if (!creatorId) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+
     const message = {
       id: uuidv4(),
       eventId,
-      userId: body.userId,
-      userName: body.userName,
-      content: body.content,
+      userId: session.userInfo.email,
+      userName: body.userName || session.userInfo.email.split('@')[0],
+      content: body.content.trim(),
       createdAt: new Date().toISOString(),
     };
 
-    // Save to DB here...
-    if (!messagesStore[eventId]) messagesStore[eventId] = [];
-    messagesStore[eventId].push(message);
+    // Append message to the event's chatMessages list securely
+    await dynamoDb.send(new UpdateCommand({
+      TableName: EVENTS_TABLE,
+      Key: { userId: creatorId, eventId: eventId },
+      UpdateExpression: "SET chatMessages = list_append(if_not_exists(chatMessages, :empty_list), :new_msg)",
+      ExpressionAttributeValues: {
+        ":new_msg": [message],
+        ":empty_list": []
+      }
+    }));
 
     // Broadcast using AWS API Gateway WebSockets
     await broadcastToEvent(eventId, "new-message", message);
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {
-    console.error(error);
+    console.error("Failed to send message", error);
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }
 }
