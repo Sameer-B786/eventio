@@ -121,15 +121,20 @@ export default function BulkRenderEngine() {
         // Capture canvas
         const dataUrl = stage.toDataURL({ pixelRatio: 2 }); // High quality
 
-        // Create PDF (convert pixels to points/mm. Let's just use exact pixel size or standard ratio)
-        // jsPDF takes points. 1 px = 0.75 points, but let's just make the PDF the exact px size
+        // Create PDF using standard CR-80 physical dimensions (85.6mm x 53.98mm)
+        // This ensures the ID card prints perfectly on physical card printers.
+        const isLandscape = width > height;
+        const cardWidthMm = isLandscape ? 85.6 : 53.98;
+        const cardHeightMm = isLandscape ? 53.98 : 85.6;
+
         const pdf = new jsPDF({
-          orientation: width > height ? 'l' : 'p',
-          unit: 'px',
-          format: [width, height]
+          orientation: isLandscape ? 'l' : 'p',
+          unit: 'mm',
+          format: [cardWidthMm, cardHeightMm]
         });
         
-        pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+        // Stretch/Scale the high-resolution canvas image exactly into the physical card bounds
+        pdf.addImage(dataUrl, 'PNG', 0, 0, cardWidthMm, cardHeightMm);
         
         const pdfBlob = pdf.output('blob');
         
