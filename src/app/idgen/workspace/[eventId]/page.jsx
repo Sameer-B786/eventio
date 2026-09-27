@@ -79,7 +79,7 @@ export default function EventWorkspacePage({ params }) {
         
         {/* Event Info Header */}
         <Card className="p-0 overflow-hidden shadow-sm flex flex-col shrink-0">
-          <div className="h-28 md:h-36 bg-cover bg-center relative" style={{ backgroundImage: `url(${eventData.bannerUrl})` }}>
+          <div className="h-28 md:h-36 bg-cover bg-center relative" style={{ backgroundImage: `url('${eventData.bannerUrl}')` }}>
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 text-white">
               <div className="flex items-center gap-3">

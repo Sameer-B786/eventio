@@ -210,7 +210,7 @@ export default function EventioWizardPage() {
                   onClick={() => router.push(`/idgen/workspace/${event.id}`)}
                   className="flex flex-col text-left bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md transition-all overflow-hidden group relative"
                 >
-                  <div className="h-24 w-full bg-cover bg-center relative" style={{ backgroundImage: `url(${event.bannerUrl})` }}>
+                  <div className="h-24 w-full bg-cover bg-center relative" style={{ backgroundImage: `url('${event.bannerUrl}')` }}>
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                     
                     <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${badgeColor}`}>

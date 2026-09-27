@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight, Crown } from 'lucide-react';
+import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function EventioSidebar({ userName = "admin" }) {
@@ -14,12 +14,11 @@ export function EventioSidebar({ userName = "admin" }) {
     { name: 'Home', href: '/idgen', icon: Home },
     { name: 'Create Event', href: '/idgen/events/new', icon: CalendarPlus },
 
-    { name: 'Bulk Certificates', href: '/idgen/certificates', icon: FileSpreadsheet, premium: true },
-    { name: 'Event Passes', href: '/idgen/event-pass', icon: Ticket, premium: true },
+    { name: 'Bulk Certificates', href: '/idgen/certificates', icon: FileSpreadsheet },
+    { name: 'Event Passes', href: '/idgen/event-pass', icon: Ticket },
     { 
       name: 'Educational ID Cards', 
       icon: BadgeCheck,
-      premium: true,
       children: [
         { name: 'K-12 Students', href: '/idgen/id-card?schema=k12' },
         { name: 'UG / PG Students', href: '/idgen/id-card?schema=ugpg' },
@@ -73,7 +72,6 @@ export function EventioSidebar({ userName = "admin" }) {
                   <div className="flex items-center">
                     <item.icon className={cn("mr-3 h-5 w-5", isChildActive ? "text-purple-600" : "text-gray-400")} />
                     {item.name}
-                    {item.premium && <Crown className="ml-2 h-3.5 w-3.5 text-amber-500" />}
                   </div>
                   {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </button>
@@ -110,7 +108,6 @@ export function EventioSidebar({ userName = "admin" }) {
               <div className="flex items-center">
                 <item.icon className={cn("mr-3 h-5 w-5", isActive ? "text-purple-600" : "text-gray-400")} />
                 {item.name}
-                {item.premium && <Crown className="ml-2 h-3.5 w-3.5 text-amber-500" />}
               </div>
             </Link>
           );

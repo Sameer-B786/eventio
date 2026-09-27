@@ -35,13 +35,35 @@ export default function CreateEventPage() {
     setLoading(true);
 
     try {
-      // 1. Upload Banner (In a real app, this goes to S3 and returns a URL. We will mock the URL for now)
-      // const formDataToUpload = new FormData();
-      // formDataToUpload.append("file", bannerFile);
-      // const uploadRes = await fetch('/api/upload', { method: 'POST', body: formDataToUpload });
-      // const { bannerUrl } = await uploadRes.json();
-      
-      const bannerUrl = bannerFile ? URL.createObjectURL(bannerFile) : "https://via.placeholder.com/800x400";
+      let bannerUrl = "https://via.placeholder.com/800x400"; // fallback
+
+      if (bannerFile) {
+        // 1. Get pre-signed URL from our backend
+        const presignRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: bannerFile.name,
+            contentType: bannerFile.type,
+          }),
+        });
+        
+        if (!presignRes.ok) throw new Error("Failed to get upload URL");
+        const { uploadUrl, fileUrl } = await presignRes.json();
+
+        // 2. Upload file directly to S3 using the pre-signed URL
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': bannerFile.type,
+          },
+          body: bannerFile,
+        });
+
+        if (!uploadRes.ok) throw new Error("Failed to upload image to S3");
+        
+        bannerUrl = fileUrl;
+      }
 
       // 2. Save Event to DB
       const res = await fetch("/api/events", {
