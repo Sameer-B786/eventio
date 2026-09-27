@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,9 @@ function VerifyForm() {
                 id="email" 
                 name="email" 
                 type="email" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -85,6 +88,9 @@ function VerifyForm() {
                 id="code" 
                 name="code" 
                 type="text" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
@@ -106,10 +112,11 @@ function VerifyForm() {
         </form>
       ) : (
         <div className="space-y-6 text-center">
-          <div className="p-4 bg-green-50 text-green-700 rounded-lg">
-            <h3 className="text-lg font-medium">Email Verified!</h3>
-            <p className="mt-2 text-sm">
-              Your account has been successfully verified. Redirecting to login...
+          <div className="p-8 bg-green-50 text-green-700 rounded-2xl border border-green-100">
+            <h3 className="text-2xl font-bold mb-2">Welcome aboard, {usernameParam}! 🎉</h3>
+            <p className="text-sm font-medium">
+              Your Eventio account has been successfully verified. <br />
+              Redirecting you to login...
             </p>
           </div>
         </div>

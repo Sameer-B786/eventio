@@ -10,7 +10,6 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
-  const [phoneNo, setPhoneNo] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +26,7 @@ export default function SignUp() {
       const signupRes = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, phoneNo, email, password }),
+        body: JSON.stringify({ username, email, password }),
       });
       
       const signupData = await signupRes.json();
@@ -83,8 +82,12 @@ export default function SignUp() {
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="username" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
+                pattern="^\S+$"
+                title="Username cannot contain spaces"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="rounded-xl"
@@ -92,21 +95,7 @@ export default function SignUp() {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="phoneNo">Phone Number</Label>
-            <div className="mt-1">
-              <Input 
-                id="phoneNo" 
-                name="phoneNo" 
-                type="tel" 
-                autoComplete="tel" 
-                required 
-                value={phoneNo}
-                onChange={(e) => setPhoneNo(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-          </div>
+
 
           <div>
             <Label htmlFor="email">Email Address</Label>
@@ -115,7 +104,9 @@ export default function SignUp() {
                 id="email" 
                 name="email" 
                 type="email" 
-                autoComplete="email" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -131,7 +122,9 @@ export default function SignUp() {
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="new-password" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

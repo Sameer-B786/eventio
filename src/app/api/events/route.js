@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dynamoDb } from "@/lib/dynamodb";
-import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { getSession } from "@/lib/session";
 
@@ -20,10 +20,8 @@ export async function POST(req) {
     const eventParams = {
       TableName: EVENTS_TABLE,
       Item: {
-        PK: `EVENT#${eventId}`,
-        SK: `METADATA`,
-        id: eventId,
-        userId: userId,
+        userId: userId,       // Partition Key
+        eventId: eventId,     // Sort Key
         name: data.name,
         description: data.description,
         bannerUrl: data.bannerUrl,
@@ -35,15 +33,7 @@ export async function POST(req) {
       },
     };
 
-    try {
-        await dynamoDb.send(new PutCommand(eventParams));
-    } catch (dbError) {
-        console.warn("DynamoDB save failed, proceeding with mock response.");
-    }
-
-    // In-memory fallback
-    if (!global.mockEvents) global.mockEvents = [];
-    global.mockEvents.push(eventParams.Item);
+    await dynamoDb.send(new PutCommand(eventParams));
 
     return NextResponse.json({ eventId, success: true }, { status: 201 });
   } catch (error) {
@@ -59,41 +49,26 @@ export async function GET() {
   }
   const userId = session.userInfo.email;
 
-  let dbEvents = [];
   try {
-    const scanParams = {
+    const queryParams = {
       TableName: EVENTS_TABLE,
-      FilterExpression: "userId = :uid",
+      KeyConditionExpression: "userId = :uid",
       ExpressionAttributeValues: {
         ":uid": userId
       }
     };
-    const result = await dynamoDb.send(new ScanCommand(scanParams));
-    dbEvents = result.Items || [];
+    const result = await dynamoDb.send(new QueryCommand(queryParams));
+    const dbEvents = result.Items || [];
+
+    // Map the events to ensure frontend compatibility if it expects 'id' instead of 'eventId'
+    const formattedEvents = dbEvents.map(e => ({
+      ...e,
+      id: e.eventId 
+    }));
+
+    return NextResponse.json(formattedEvents);
   } catch (dbError) {
-    // Fallback if DynamoDB is not provisioned
+    console.error("DynamoDB Query Error:", dbError);
+    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
   }
-
-  const mockDemoEvent = {
-    id: "demo-event-123",
-    userId: userId,
-    name: "Sample Tech Event Workspace",
-    description: "A space to interact dynamically.",
-    hostedBy: "Eventio Admin",
-    bannerUrl: "https://via.placeholder.com/800x200",
-    startTime: new Date(Date.now() - 3600000).toISOString(),
-    endTime: new Date(Date.now() + 7200000).toISOString(),
-    isActive: true
-  };
-  
-  const memoryEvents = (global.mockEvents || []).filter(e => e.userId === userId);
-  
-  const eventsMap = new Map();
-  // Prefer DynamoDB events if any exist, otherwise memory events
-  const sourceEvents = dbEvents.length > 0 ? dbEvents : memoryEvents;
-  
-  sourceEvents.forEach(e => eventsMap.set(e.id, e));
-  eventsMap.set(mockDemoEvent.id, mockDemoEvent); // Always include the demo
-
-  return NextResponse.json(Array.from(eventsMap.values()));
 }

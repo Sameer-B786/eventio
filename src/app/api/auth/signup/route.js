@@ -16,10 +16,14 @@ function calculateSecretHash(username) {
 
 export async function POST(request) {
   try {
-    const { email, password, username, phoneNo } = await request.json();
+    const { email, password, username } = await request.json();
 
     if (!email || !password || !username) {
       return NextResponse.json({ error: 'Username, email and password are required' }, { status: 400 });
+    }
+
+    if (username.includes(' ')) {
+      return NextResponse.json({ error: 'Username cannot contain spaces' }, { status: 400 });
     }
 
     const emailDomain = email.split('@')[1]?.toLowerCase();
@@ -47,13 +51,6 @@ export async function POST(request) {
         Value: username, // Providing username as name to satisfy the schema requirement
       }
     ];
-
-    if (phoneNo) {
-      userAttributes.push({
-        Name: 'phone_number',
-        Value: phoneNo.startsWith('+') ? phoneNo : `+91${phoneNo.replace(/\D/g, '')}` // fallback assumption
-      });
-    }
 
     userAttributes.push({
       Name: 'updated_at',

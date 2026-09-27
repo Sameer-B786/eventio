@@ -60,8 +60,12 @@ export default function Login() {
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="username" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
+                pattern="^\S+$"
+                title="Username cannot contain spaces"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="rounded-xl"
@@ -81,7 +85,9 @@ export default function Login() {
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="current-password" 
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
