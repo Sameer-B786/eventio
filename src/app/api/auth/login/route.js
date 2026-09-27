@@ -18,21 +18,20 @@ function calculateSecretHash(username) {
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    const { username, password } = await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!username || !password) {
+      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
-
     const client = new CognitoIdentityProviderClient({ region: REGION });
-    const secretHash = calculateSecretHash(email);
+    const secretHash = calculateSecretHash(username);
 
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: CLIENT_ID,
       AuthParameters: {
-        USERNAME: email,
+        USERNAME: username,
         PASSWORD: password,
         SECRET_HASH: secretHash,
       },
@@ -41,17 +40,10 @@ export async function POST(request) {
     const response = await client.send(command);
 
     if (response.AuthenticationResult) {
-      // Decode ID token to get the user's name
-      const idToken = response.AuthenticationResult.IdToken;
-      const decodedIdToken = decodeJwt(idToken);
-      const name = decodedIdToken.name || email.split('@')[0]; // fallback to email prefix if name is missing
-
-      // Create session with tokens and user info
+      // Create session with tokens
       await createSession({
-        email,
-        name,
         accessToken: response.AuthenticationResult.AccessToken,
-        idToken,
+        idToken: response.AuthenticationResult.IdToken,
       });
 
       return NextResponse.json({ success: true });

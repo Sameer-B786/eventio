@@ -8,8 +8,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
-  const [email, setEmail] = useState('mock@example.com');
-  const [password, setPassword] = useState('mock123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
       
       if (res.ok) {
@@ -54,16 +54,16 @@ export default function Login() {
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="username">Username</Label>
             <div className="mt-2">
               <Input 
-                id="email" 
-                name="email" 
-                type="email" 
-                autoComplete="email" 
+                id="username" 
+                name="username" 
+                type="text" 
+                autoComplete="username" 
                 required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="rounded-xl"
               />
             </div>

@@ -28,9 +28,9 @@ export async function POST(request) {
     }
 
     const client = new CognitoIdentityProviderClient({ region: REGION });
-    // Generate a unique username (UUID) because Cognito rejects emails in the Username field if email alias is enabled
-    // We'll store their provided username as preferred_username
-    const generatedUsername = crypto.randomUUID();
+    
+    // Use the provided username as the Cognito Username
+    const generatedUsername = username;
     const secretHash = calculateSecretHash(generatedUsername);
 
     const userAttributes = [
@@ -41,6 +41,10 @@ export async function POST(request) {
       {
         Name: 'preferred_username',
         Value: username,
+      },
+      {
+        Name: 'name',
+        Value: username, // Providing username as name to satisfy the schema requirement
       }
     ];
 
@@ -77,7 +81,7 @@ export async function POST(request) {
     
     let message = 'An error occurred during sign up';
     if (error.name === 'UsernameExistsException') {
-      message = 'An account with this email already exists';
+      message = 'An account with this username already exists';
     } else if (error.name === 'InvalidPasswordException') {
       message = 'Password does not meet requirements';
     } else if (error.name === 'InvalidParameterException') {

@@ -41,7 +41,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Verification error:', error);
     
-    let message = 'An error occurred during verification';
+    let message = `An error occurred during verification: ${error.name} - ${error.message}`;
     if (error.name === 'CodeMismatchException') {
       message = 'Invalid verification code';
     } else if (error.name === 'ExpiredCodeException') {
