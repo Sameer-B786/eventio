@@ -17,7 +17,7 @@ export default function BulkCertificatesPage() {
   const [previewData, setPreviewData] = useState(null);
   
   const [myEvents, setMyEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const [selectedEventId, setSelectedEventId] = useState("standalone");
 
   useEffect(() => {
     fetch('/api/events') // This correctly returns only events where user is host or volunteer
@@ -115,7 +115,7 @@ export default function BulkCertificatesPage() {
             
             <div className="space-y-2">
               <Label htmlFor="event-select" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-purple-600" /> Select Target Event
+                <Calendar className="h-4 w-4 text-purple-600" /> Link to Event (Optional)
               </Label>
               <select 
                 id="event-select"
@@ -123,12 +123,12 @@ export default function BulkCertificatesPage() {
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
               >
-                <option value="" disabled>-- Select an event --</option>
+                <option value="standalone">-- Standalone Generation (No Event) --</option>
                 {myEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.name} (Host: {ev.hostedBy})</option>
                 ))}
               </select>
-              {myEvents.length === 0 && <p className="text-xs text-red-500">You are not a host or volunteer for any active events.</p>}
+              {myEvents.length === 0 && <p className="text-xs text-gray-500 mt-2">You can generate certificates independently, or create an event to link them.</p>}
             </div>
 
             <div className="space-y-2">
@@ -149,7 +149,7 @@ export default function BulkCertificatesPage() {
 
             <Button 
               className="w-full bg-indigo-600 hover:bg-indigo-700" 
-              disabled={!selectedEventId || data.length === 0 || !template || loading}
+              disabled={data.length === 0 || !template || loading}
               onClick={generateCertificates}
             >
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Download className="w-4 h-4 mr-2" /> Generate ZIP</>}

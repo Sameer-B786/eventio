@@ -22,7 +22,7 @@ export default function EventPassGeneratorPage() {
   const records = useGeneratorStore((state) => state.records);
 
   const [myEvents, setMyEvents] = React.useState([]);
-  const [selectedEventId, setSelectedEventId] = React.useState("");
+  const [selectedEventId, setSelectedEventId] = React.useState("standalone");
 
   React.useEffect(() => {
     fetch('/api/events')
@@ -55,19 +55,19 @@ export default function EventPassGeneratorPage() {
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6">
             <div>
-              <h2 className="text-lg font-bold text-gray-800">1. Select Target Event</h2>
-              <p className="text-sm text-gray-500 mb-2">Choose the event to generate passes for</p>
+              <h2 className="text-lg font-bold text-gray-800">1. Link Target Event (Optional)</h2>
+              <p className="text-sm text-gray-500 mb-2">Choose an event to link these passes to, or generate standalone.</p>
               <select 
                 className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
               >
-                <option value="" disabled>-- Select an event --</option>
+                <option value="standalone">-- Standalone Generation (No Event) --</option>
                 {myEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.name} (Host: {ev.hostedBy})</option>
                 ))}
               </select>
-              {myEvents.length === 0 && <p className="text-xs text-red-500 mt-2">You are not a host or volunteer for any active events.</p>}
+              {myEvents.length === 0 && <p className="text-xs text-gray-500 mt-2">You can generate passes independently, or create an event to link them.</p>}
             </div>
 
             <div className="border-t pt-6">
@@ -81,7 +81,7 @@ export default function EventPassGeneratorPage() {
             
             <div className="border-t pt-6 mt-2">
               <h2 className="text-lg font-bold text-gray-800 mb-4">3. Generate</h2>
-              {selectedEventId ? <BulkRenderEngine /> : <p className="text-sm text-red-500">Please select an event first.</p>}
+              <BulkRenderEngine />
             </div>
           </div>
         </div>
