@@ -33,7 +33,6 @@ export const schemas = {
     event_name: { required: true, type: 'string' },
     attendee_name: { required: true, type: 'string' },
     role: { required: true, type: 'role' },
-    roll_no: { required: false, type: 'string' },
   }
 };
 
