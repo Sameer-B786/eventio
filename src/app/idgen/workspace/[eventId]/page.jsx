@@ -13,8 +13,8 @@ export default function EventWorkspacePage({ params }) {
   const { eventId } = resolvedParams;
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isEventActive, setIsEventActive] = useState(false);
-  
+  const [statusInfo, setStatusInfo] = useState({ label: '', color: '', isLive: false, willDelete: false });
+
   // Custom hook that manages real-time state via AWS API Gateway WebSockets
   const { messages, polls } = useWorkspaceWebSocket(eventId);
 
@@ -22,7 +22,30 @@ export default function EventWorkspacePage({ params }) {
     const now = new Date();
     const start = new Date(data.startTime);
     const end = new Date(data.endTime);
-    setIsEventActive(now >= start && now <= end);
+    
+    let label = "Closed";
+    let color = "bg-gray-600 border-gray-200 text-gray-700";
+    let isLive = false;
+    let willDelete = false;
+
+    if (now < start) {
+      const diffMins = Math.floor((start.getTime() - now.getTime()) / 60000);
+      label = diffMins <= 120 ? `Starting in ${diffMins}m` : "Upcoming";
+      color = "bg-green-50 border-green-200 text-green-700";
+    } else if (now >= start && now <= end) {
+      label = "Live Now";
+      color = "bg-red-50 border-red-200 text-red-700";
+      isLive = true;
+    } else {
+      label = "Event Expired";
+      color = "bg-gray-50 border-gray-200 text-gray-700";
+      const twoHoursAfter = end.getTime() + 2 * 60 * 60 * 1000;
+      if (now <= twoHoursAfter) {
+        willDelete = true;
+      }
+    }
+    
+    setStatusInfo({ label, color, isLive, willDelete });
   };
 
   useEffect(() => {
@@ -69,15 +92,15 @@ export default function EventWorkspacePage({ params }) {
             <div className="absolute bottom-0 left-0 p-4 text-white">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold">{eventData.name}</h2>
-                {isEventActive && (
-                  <span className="bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${statusInfo.isLive ? 'bg-red-500 text-white' : statusInfo.label.includes('Starting') ? 'bg-green-500 text-white' : 'bg-gray-600/80 text-white'}`}>
+                  {statusInfo.isLive && (
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                     </span>
-                    Live Now
-                  </span>
-                )}
+                  )}
+                  {statusInfo.label}
+                </span>
               </div>
               <p className="text-sm opacity-90 flex items-center gap-1 mt-1">
                 <Users className="h-4 w-4" /> Hosted by {eventData.hostedBy}
@@ -91,14 +114,23 @@ export default function EventWorkspacePage({ params }) {
               <p className="text-sm text-gray-600">{eventData.description}</p>
             </div>
             
-            <div className={`p-3 rounded-lg border flex items-center gap-3 shrink-0 ${isEventActive ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-              {isEventActive ? <Clock className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-              <div className="text-sm">
-                <p className="font-semibold leading-tight">{isEventActive ? "Workspace Active" : "Workspace Inactive"}</p>
-                <p className="opacity-90 text-xs mt-0.5">
-                  {isEventActive ? `Closes at ${new Date(eventData.endTime).toLocaleString()}` : 'The event is closed.'}
-                </p>
+            <div className={`p-3 rounded-lg border flex flex-col shrink-0 ${statusInfo.color}`}>
+              <div className="flex items-center gap-3">
+                {statusInfo.isLive ? <Clock className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                <div className="text-sm">
+                  <p className="font-semibold leading-tight">Workspace Status: {statusInfo.label}</p>
+                  <p className="opacity-90 text-xs mt-0.5">
+                    {statusInfo.isLive ? `Closes at ${new Date(eventData.endTime).toLocaleString()}` : 
+                     statusInfo.label === 'Event Expired' ? 'The event has concluded.' :
+                     `Starts at ${new Date(eventData.startTime).toLocaleString()}`}
+                  </p>
+                </div>
               </div>
+              {statusInfo.willDelete && (
+                <div className="mt-2 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                  ⚠️ This workspace will be automatically permanently deleted 2 hours after expiration.
+                </div>
+              )}
             </div>
           </div>
         </Card>

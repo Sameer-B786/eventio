@@ -17,6 +17,10 @@ export async function POST(req) {
     const data = await req.json();
     const eventId = uuidv4();
     
+    // Calculate TTL (2 hours after endTime) in seconds
+    const endMs = new Date(data.endTime).getTime();
+    const ttlSeconds = Math.floor((endMs + 2 * 60 * 60 * 1000) / 1000);
+
     const eventParams = {
       TableName: EVENTS_TABLE,
       Item: {
@@ -29,7 +33,8 @@ export async function POST(req) {
         startTime: data.startTime,
         endTime: data.endTime,
         createdAt: new Date().toISOString(),
-        isActive: true
+        isActive: true,
+        ttl: ttlSeconds       // DynamoDB TTL attribute
       },
     };
 
@@ -58,7 +63,17 @@ export async function GET() {
       }
     };
     const result = await dynamoDb.send(new QueryCommand(queryParams));
-    const dbEvents = result.Items || [];
+    let dbEvents = result.Items || [];
+
+    const nowMs = Date.now();
+    
+    // Filter out events that are past their 2-hour expiration window manually
+    // (DynamoDB TTL might take up to 48 hours to fully sweep, so we enforce it on read)
+    dbEvents = dbEvents.filter(e => {
+      if (!e.endTime) return true;
+      const expireTimeMs = new Date(e.endTime).getTime() + 2 * 60 * 60 * 1000;
+      return nowMs < expireTimeMs;
+    });
 
     // Map the events to ensure frontend compatibility if it expects 'id' instead of 'eventId'
     const formattedEvents = dbEvents.map(e => ({
