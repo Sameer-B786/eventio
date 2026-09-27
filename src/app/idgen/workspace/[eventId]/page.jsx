@@ -111,7 +111,13 @@ export default function EventWorkspacePage({ params }) {
           <div className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white">
             <div className="flex-1">
               <h3 className="font-medium text-sm flex items-center gap-1 mb-1 text-gray-800"><Info className="h-4 w-4" /> Description</h3>
-              <p className="text-sm text-gray-600">{eventData.description}</p>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {eventData.description?.split(/(https?:\/\/[^\s]+)/g).map((part, index) => 
+                  part.match(/(https?:\/\/[^\s]+)/) 
+                    ? <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">{part}</a>
+                    : part
+                )}
+              </p>
             </div>
             
             <div className={`p-3 rounded-lg border flex flex-col shrink-0 ${statusInfo.color}`}>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dynamoDb } from "@/lib/dynamodb";
-import { GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, DeleteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { getSession } from "@/lib/session";
 
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME || "Eventio-Events";
@@ -11,23 +11,25 @@ export async function GET(req, { params }) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.userInfo.email;
 
     const { eventId } = await params;
     
-    const { Item } = await dynamoDb.send(new GetCommand({
+    // We use a Scan here because any user can view the event to register, 
+    // but the Partition Key is the creator's userId.
+    const { Items } = await dynamoDb.send(new ScanCommand({
       TableName: EVENTS_TABLE,
-      Key: {
-        userId: userId,
-        eventId: eventId
+      FilterExpression: "eventId = :eid",
+      ExpressionAttributeValues: {
+        ":eid": eventId
       }
     }));
     
-    if (Item) {
+    if (Items && Items.length > 0) {
+      const Item = Items[0];
       return NextResponse.json({ ...Item, id: Item.eventId });
     }
 
-    return NextResponse.json({ error: "Not found or unauthorized" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   } catch (error) {
     console.error("Error fetching single event:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
