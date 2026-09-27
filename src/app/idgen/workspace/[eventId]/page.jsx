@@ -12,11 +12,8 @@ export default function EventWorkspacePage({ params }) {
   const resolvedParams = use(params);
   const { eventId } = resolvedParams;
   const [eventData, setEventData] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusInfo, setStatusInfo] = useState({ label: '', color: '', isLive: false, willDelete: false });
-  const [volunteerEmail, setVolunteerEmail] = useState("");
-  const [addingVolunteer, setAddingVolunteer] = useState(false);
 
   // Custom hook that manages real-time state via AWS API Gateway WebSockets
   const { messages, polls } = useWorkspaceWebSocket(eventId);
@@ -52,23 +49,15 @@ export default function EventWorkspacePage({ params }) {
   };
 
   useEffect(() => {
-    const fetchEventAndUser = async () => {
+    // In a real app, we fetch from /api/events/[eventId]
+    // For demo/prototype purposes we mock the response if the fetch fails
+    const fetchEvent = async () => {
       try {
-        const [eventRes, userRes] = await Promise.all([
-          fetch(`/api/events/${eventId}`),
-          fetch(`/api/auth/me`)
-        ]);
-        
-        if (!eventRes.ok) throw new Error("Not found");
-        
-        const data = await eventRes.json();
+        const res = await fetch(`/api/events/${eventId}`);
+        if (!res.ok) throw new Error("Not found");
+        const data = await res.json();
         setEventData(data);
         checkActive(data);
-
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setCurrentUser(userData.user);
-        }
       } catch (err) {
         console.error("Event not found or unauthorized");
         setEventData(null);
@@ -76,38 +65,11 @@ export default function EventWorkspacePage({ params }) {
         setLoading(false);
       }
     };
-    fetchEventAndUser();
+    fetchEvent();
   }, [eventId]);
   
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Workspace...</div>;
   if (!eventData) return <div className="p-8 text-center text-red-500 font-bold">Workspace not found or has been deleted.</div>;
-
-  const isHost = currentUser?.email === eventData?.userId;
-  const isVolunteer = eventData?.volunteers?.includes(currentUser?.email);
-
-  const handleAddVolunteer = async (e) => {
-    e.preventDefault();
-    if (!volunteerEmail) return;
-    setAddingVolunteer(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}/volunteers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ volunteerEmail })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setEventData(prev => ({ ...prev, volunteers: data.volunteers }));
-        setVolunteerEmail("");
-      } else {
-        alert("Failed to add volunteer. Ensure they have an Eventio account.");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAddingVolunteer(false);
-    }
-  };
 
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col md:flex-row gap-4 bg-gray-50">
@@ -169,37 +131,6 @@ export default function EventWorkspacePage({ params }) {
               )}
             </div>
           </div>
-          
-          {/* Volunteer Management (Only visible to Host) */}
-          {isHost && (
-            <div className="p-4 border-t bg-gray-50 flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="text-sm">
-                <p className="font-semibold text-gray-800">Event Volunteers</p>
-                <p className="text-gray-500 text-xs">Volunteers can access generator tools for this event.</p>
-                {eventData.volunteers?.length > 0 && (
-                  <p className="text-xs text-purple-600 mt-1 font-medium">Active: {eventData.volunteers.join(', ')}</p>
-                )}
-              </div>
-              <form onSubmit={handleAddVolunteer} className="flex items-center gap-2 w-full md:w-auto">
-                <input 
-                  type="email" 
-                  placeholder="Volunteer email..." 
-                  className="flex h-9 w-full md:w-64 rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-500"
-                  value={volunteerEmail}
-                  onChange={(e) => setVolunteerEmail(e.target.value)}
-                  disabled={addingVolunteer}
-                  required
-                />
-                <button 
-                  type="submit" 
-                  disabled={addingVolunteer}
-                  className="h-9 px-4 bg-purple-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {addingVolunteer ? "Adding..." : "Add"}
-                </button>
-              </form>
-            </div>
-          )}
         </Card>
 
         {/* Real-time Chat */}

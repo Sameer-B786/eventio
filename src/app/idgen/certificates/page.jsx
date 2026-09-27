@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
 
@@ -8,23 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileSpreadsheet, FileJson, Download, Eye, Loader2, Calendar } from "lucide-react";
+import { FileSpreadsheet, FileJson, Download, Eye, Loader2 } from "lucide-react";
 
 export default function BulkCertificatesPage() {
   const [data, setData] = useState([]);
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [previewData, setPreviewData] = useState(null);
-  
-  const [myEvents, setMyEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState("standalone");
-
-  useEffect(() => {
-    fetch('/api/events') // This correctly returns only events where user is host or volunteer
-      .then(res => res.ok ? res.json() : [])
-      .then(events => setMyEvents(events))
-      .catch(console.error);
-  }, []);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -109,28 +99,10 @@ export default function BulkCertificatesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">Bulk Certificates</CardTitle>
-            <CardDescription>Upload participant data and a JSON template to generate certificates for your event.</CardDescription>
+            <CardDescription>Upload participant data and a JSON template to generate certificates in bulk.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             
-            <div className="space-y-2">
-              <Label htmlFor="event-select" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-purple-600" /> Link to Event (Optional)
-              </Label>
-              <select 
-                id="event-select"
-                className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-              >
-                <option value="standalone">-- Standalone Generation (No Event) --</option>
-                {myEvents.map(ev => (
-                  <option key={ev.id} value={ev.id}>{ev.name} (Host: {ev.hostedBy})</option>
-                ))}
-              </select>
-              {myEvents.length === 0 && <p className="text-xs text-gray-500 mt-2">You can generate certificates independently, or create an event to link them.</p>}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="data-upload" className="flex items-center gap-2">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel / CSV Data

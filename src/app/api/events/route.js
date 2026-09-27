@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dynamoDb } from "@/lib/dynamodb";
-import { PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { getSession } from "@/lib/session";
 
@@ -34,7 +34,6 @@ export async function POST(req) {
         endTime: data.endTime,
         createdAt: new Date().toISOString(),
         isActive: true,
-        volunteers: [],       // Array of volunteer emails
         ttl: ttlSeconds       // DynamoDB TTL attribute
       },
     };
@@ -63,25 +62,8 @@ export async function GET() {
         ":uid": userId
       }
     };
-    const hostedResult = await dynamoDb.send(new QueryCommand(queryParams));
-    let dbEvents = hostedResult.Items || [];
-
-    // Also scan for events where the user is a volunteer
-    const scanParams = {
-      TableName: EVENTS_TABLE,
-      FilterExpression: "contains(volunteers, :uid)",
-      ExpressionAttributeValues: {
-        ":uid": userId
-      }
-    };
-    try {
-      const volResult = await dynamoDb.send(new ScanCommand(scanParams));
-      if (volResult.Items) {
-        dbEvents = [...dbEvents, ...volResult.Items];
-      }
-    } catch (scanErr) {
-      console.warn("Scan for volunteers failed or no volunteers attribute exists yet.");
-    }
+    const result = await dynamoDb.send(new QueryCommand(queryParams));
+    let dbEvents = result.Items || [];
 
     const nowMs = Date.now();
     
