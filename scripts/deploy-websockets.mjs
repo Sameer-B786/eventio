@@ -10,8 +10,8 @@ dotenv.config({ path: '.env.local' });
 // Initialize AWS Clients
 const region = process.env.AWS_REGION || "ap-south-1";
 const credentials = {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY
 };
 
 const ddb = new DynamoDBClient({ region, credentials });
@@ -211,7 +211,7 @@ export const handler = async (event) => {
     console.log(`\n-------------------------------------------------`);
     console.log(`👉 ADD THESE TO YOUR .env.local FILE:`);
     console.log(`NEXT_PUBLIC_AWS_WSS_URL=wss://${apiId}.execute-api.${region}.amazonaws.com/production`);
-    console.log(`AWS_WSS_CONNECTION_URL=https://${apiId}.execute-api.${region}.amazonaws.com/production`);
+    console.log(`EVENTIO_AWS_WSS_CONNECTION_URL=https://${apiId}.execute-api.${region}.amazonaws.com/production`);
     console.log(`-------------------------------------------------\n`);
 
     // Cleanup

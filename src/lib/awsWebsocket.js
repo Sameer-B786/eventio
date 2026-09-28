@@ -3,15 +3,15 @@ import { dynamoDb } from "./dynamodb";
 import { QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
 const CONNECTIONS_TABLE = process.env.CONNECTIONS_TABLE_NAME || "Eventio-Connections";
-const ENDPOINT = process.env.AWS_WSS_CONNECTION_URL;
+const ENDPOINT = process.env.EVENTIO_AWS_WSS_CONNECTION_URL;
 
 // Initialize the API Gateway Management client
 const apigwClient = new ApiGatewayManagementApiClient({
   region: process.env.AWS_REGION || "ap-south-1",
   endpoint: ENDPOINT,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "dummy",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "dummy",
+    accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID || "dummy",
+    secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY || "dummy",
   },
 });
 
