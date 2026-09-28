@@ -1,11 +1,17 @@
 import { cookies } from 'next/headers';
 import { decodeJwt, jwtVerify, createRemoteJWKSet } from 'jose';
 
-// Fetch the JWKS from AWS Cognito
-const JWKS = createRemoteJWKSet(
-  new URL(`https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`),
-  { timeoutDuration: 15000 } // Increased timeout to prevent slow network errors in dev
-);
+// Lazy-load JWKS to ensure process.env is fully initialized by Next.js
+let JWKS;
+function getJWKS() {
+  if (!JWKS) {
+    JWKS = createRemoteJWKSet(
+      new URL(`https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`),
+      { timeoutDuration: 15000 }
+    );
+  }
+  return JWKS;
+}
 
 export async function createSession({ idToken, accessToken }) {
   const cookieStore = await cookies();
@@ -37,7 +43,7 @@ export async function getSession() {
     if (!idToken) return null;
     
     // Cryptographically verify the token
-    const { payload } = await jwtVerify(idToken, JWKS, {
+    const { payload } = await jwtVerify(idToken, getJWKS(), {
       issuer: `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
     });
     
