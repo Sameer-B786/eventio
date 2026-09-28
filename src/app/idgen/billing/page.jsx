@@ -5,7 +5,7 @@ import { CreditCard, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Script from 'next/script';
 
 function BillingContent() {
-  const [loading, setLoading] = useState(false);
+  const [loadingBundle, setLoadingBundle] = useState(null);
   const [credits, setCredits] = useState(null);
   const [txnStatus, setTxnStatus] = useState(null); // 'SUCCESS', 'FAILED', 'PENDING'
 
@@ -21,7 +21,7 @@ function BillingContent() {
   }, []);
 
   const handleBuyCredits = async (bundleSize) => {
-    setLoading(true);
+    setLoadingBundle(bundleSize);
     setTxnStatus(null);
     try {
       // 1. Create order on backend
@@ -83,7 +83,7 @@ function BillingContent() {
       console.error("Payment Error:", error);
       setTxnStatus('FAILED');
     } finally {
-      setLoading(false);
+      setLoadingBundle(null);
     }
   };
 
@@ -143,10 +143,10 @@ function BillingContent() {
             <p className="text-gray-500 mb-6">₹50</p>
             <button 
               onClick={() => handleBuyCredits(10)}
-              disabled={loading}
+              disabled={loadingBundle !== null}
               className="w-full py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50"
             >
-              Buy Now
+              {loadingBundle === 10 ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : "Buy Now"}
             </button>
           </div>
 
@@ -158,10 +158,10 @@ function BillingContent() {
             <p className="text-blue-600/80 mb-6">₹500</p>
             <button 
               onClick={() => handleBuyCredits(100)}
-              disabled={loading}
+              disabled={loadingBundle !== null}
               className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
             >
-              Buy Now
+              {loadingBundle === 100 ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : "Buy Now"}
             </button>
           </div>
 
@@ -172,10 +172,10 @@ function BillingContent() {
             <p className="text-gray-500 mb-6">₹2500</p>
             <button 
               onClick={() => handleBuyCredits(500)}
-              disabled={loading}
+              disabled={loadingBundle !== null}
               className="w-full py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50"
             >
-              Buy Now
+              {loadingBundle === 500 ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : "Buy Now"}
             </button>
           </div>
 
