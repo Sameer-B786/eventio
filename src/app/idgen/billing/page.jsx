@@ -1,76 +1,87 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { CreditCard, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import Script from 'next/script';
 
 function BillingContent() {
-  const searchParams = useSearchParams();
-  const txn = searchParams.get('txn');
-  
   const [loading, setLoading] = useState(false);
   const [credits, setCredits] = useState(null);
   const [txnStatus, setTxnStatus] = useState(null); // 'SUCCESS', 'FAILED', 'PENDING'
 
-  const checkTransactionStatus = async (transactionId) => {
-    try {
-      const res = await fetch(`/api/payments/phonepe/status/${transactionId}`);
-      const data = await res.json();
-      if (data.status === 'COMPLETED') {
-        setTxnStatus('SUCCESS');
-        // Refresh credits balance
-        fetch('/api/credits/balance').then(r => r.json()).then(d => setCredits(d.credits)).catch(console.error);
-        return true;
-      } else if (data.status === 'FAILED') {
-        setTxnStatus('FAILED');
-        return true;
-      } else {
-        setTxnStatus('PENDING');
-        return false;
-      }
-    } catch (e) {
-      console.error(e);
-      return true; // stop polling on error
-    }
-  };
-
-  useEffect(() => {
-    // Fetch current wallet balance
+  const fetchCredits = () => {
     fetch('/api/credits/balance')
       .then(r => r.json())
       .then(data => setCredits(data.credits))
       .catch(console.error);
+  };
 
-    // If returning from PhonePe, check status
-    if (txn) {
-      checkTransactionStatus(txn).then((done) => {
-        if (!done) {
-          // Poll every 3 seconds if PENDING
-          const interval = setInterval(async () => {
-            const isDone = await checkTransactionStatus(txn);
-            if (isDone) clearInterval(interval);
-          }, 3000);
-          return () => clearInterval(interval);
-        }
-      });
-    }
-  }, [txn]);
+  useEffect(() => {
+    fetchCredits();
+  }, []);
 
   const handleBuyCredits = async (bundleSize) => {
     setLoading(true);
+    setTxnStatus(null);
     try {
-      const res = await fetch('/api/payments/phonepe/create', {
+      // 1. Create order on backend
+      const res = await fetch('/api/payments/razorpay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bundleSize })
       });
-      const data = await res.json();
-      if (data.url) {
-        // Redirect to PhonePe PG
-        window.location.href = data.url;
-      }
+      const order = await res.json();
+      
+      if (!order.orderId) throw new Error("Failed to create order");
+
+      // 2. Initialize Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TYVq9F1g2m7w1X',
+        amount: order.amount,
+        currency: order.currency,
+        name: "Eventio",
+        description: `${bundleSize} Generation Credits`,
+        order_id: order.orderId,
+        handler: async function (response) {
+          // 3. Verify Payment
+          setTxnStatus('PENDING');
+          const verifyRes = await fetch('/api/payments/razorpay/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            setTxnStatus('SUCCESS');
+            fetchCredits(); // Refresh UI
+          } else {
+            setTxnStatus('FAILED');
+          }
+        },
+        prefill: {
+          name: "Eventio User",
+          email: "user@eventio.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#2563EB"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        setTxnStatus('FAILED');
+      });
+      rzp.open();
+
     } catch (error) {
       console.error("Payment Error:", error);
+      setTxnStatus('FAILED');
     } finally {
       setLoading(false);
     }
@@ -78,13 +89,15 @@ function BillingContent() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+      
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Wallet & Billing</h1>
         <p className="text-gray-500">Manage your generation credits for ID Cards, Certificates, and Event Passes.</p>
       </div>
 
       {/* Transaction Result Banner */}
-      {txn && txnStatus && (
+      {txnStatus && (
         <div className={`p-4 rounded-xl flex items-center gap-3 ${
           txnStatus === 'SUCCESS' ? 'bg-green-50 text-green-700 border border-green-200' :
           txnStatus === 'FAILED' ? 'bg-red-50 text-red-700 border border-red-200' :
@@ -96,11 +109,11 @@ function BillingContent() {
           <div>
             <h3 className="font-bold">
               {txnStatus === 'SUCCESS' ? 'Payment Successful!' :
-               txnStatus === 'FAILED' ? 'Payment Failed' : 'Payment Pending'}
+               txnStatus === 'FAILED' ? 'Payment Failed' : 'Verifying Payment...'}
             </h3>
             <p className="text-sm">
               {txnStatus === 'SUCCESS' ? 'Your credits have been added to your wallet.' :
-               txnStatus === 'FAILED' ? 'We could not process your transaction. Please try again.' : 'We are waiting for confirmation from your bank.'}
+               txnStatus === 'FAILED' ? 'We could not process your transaction. Please try again.' : 'Please wait while we verify your transaction.'}
             </p>
           </div>
         </div>

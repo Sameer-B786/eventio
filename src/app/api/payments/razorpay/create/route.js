@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { createPhonePeOrder } from '@/lib/phonepe';
-import { v4 as uuidv4 } from 'uuid';
+import { razorpayClient } from '@/lib/razorpay';
 import { dynamoDb } from '@/lib/dynamodb';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -14,32 +13,29 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bundleSize } = await req.json(); // e.g., 50 credits, 100 credits
-    
-    // Validate bundle sizes (just to prevent arbitrary amounts if desired, but we can allow dynamic)
-    const costPerCredit = 5; // 5 INR per PDF
+    const { bundleSize } = await req.json();
+    const costPerCredit = 5; 
     const amountInRupees = bundleSize * costPerCredit;
     
     if (amountInRupees <= 0) {
       return NextResponse.json({ error: "Invalid bundle size" }, { status: 400 });
     }
 
-    const transactionId = `TXN_${uuidv4().replace(/-/g, '')}`;
-    const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/idgen/billing?txn=${transactionId}`;
-
-    // 1. Create order with PhonePe
-    const phonepeResponse = await createPhonePeOrder(
-      transactionId, 
-      amountInRupees, 
-      session.userId, 
-      redirectUrl
-    );
+    // 1. Create Razorpay Order
+    // amount is in paise (₹1 = 100 paise)
+    const options = {
+      amount: amountInRupees * 100, 
+      currency: "INR",
+      receipt: `RCPT_${Date.now()}`
+    };
+    
+    const order = await razorpayClient.orders.create(options);
 
     // 2. Save Pending Transaction to DynamoDB
     await dynamoDb.send(new PutCommand({
       TableName: TRANSACTIONS_TABLE,
       Item: {
-        transactionId,
+        transactionId: order.id,
         userId: session.userId,
         bundleSize,
         amount: amountInRupees,
@@ -48,12 +44,11 @@ export async function POST(req) {
       }
     }));
 
-    // 3. Return the redirect URL to the frontend
-    const payUrl = phonepeResponse.instrumentResponse.redirectInfo.url;
-    return NextResponse.json({ url: payUrl, transactionId });
+    // 3. Return the order details to the frontend
+    return NextResponse.json({ orderId: order.id, amount: order.amount, currency: order.currency });
 
   } catch (error) {
-    console.error("PhonePe Create Order Error:", error);
+    console.error("Razorpay Create Order Error:", error);
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 });
   }
 }
