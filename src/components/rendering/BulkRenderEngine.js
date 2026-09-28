@@ -29,10 +29,32 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
     if (!records || records.length === 0 || !templateJson) return;
 
     setIsGenerating(true);
-    setStatus('Initializing generation...');
+    setStatus('Verifying credits...');
     setDownloadUrl(null);
 
     try {
+      // 1. Deduct Credits
+      const deductRes = await fetch('/api/credits/deduct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: records.length })
+      });
+
+      if (!deductRes.ok) {
+        if (deductRes.status === 402) {
+          if (confirm(`Insufficient credits! You need ${records.length} credits. Redirect to billing?`)) {
+            window.location.href = '/idgen/billing';
+          }
+        } else {
+          alert("Failed to verify credits. Please try again.");
+        }
+        setStatus(null);
+        setIsGenerating(false);
+        return;
+      }
+
+      setStatus('Initializing generation...');
+
       const zip = new JSZip();
       const { canvas, elements } = templateJson;
       const width = canvas.width;
