@@ -3,10 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CreditCard, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function BillingPage() {
-  const { user } = useAuth();
   const searchParams = useSearchParams();
   const txn = searchParams.get('txn');
   
