@@ -12,6 +12,28 @@ export default function BillingPage() {
   const [credits, setCredits] = useState(null);
   const [txnStatus, setTxnStatus] = useState(null); // 'SUCCESS', 'FAILED', 'PENDING'
 
+  const checkTransactionStatus = async (transactionId) => {
+    try {
+      const res = await fetch(`/api/payments/phonepe/status/${transactionId}`);
+      const data = await res.json();
+      if (data.status === 'COMPLETED') {
+        setTxnStatus('SUCCESS');
+        // Refresh credits balance
+        fetch('/api/credits/balance').then(r => r.json()).then(d => setCredits(d.credits)).catch(console.error);
+        return true;
+      } else if (data.status === 'FAILED') {
+        setTxnStatus('FAILED');
+        return true;
+      } else {
+        setTxnStatus('PENDING');
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      return true; // stop polling on error
+    }
+  };
+
   useEffect(() => {
     // Fetch current wallet balance
     fetch('/api/credits/balance')
@@ -21,25 +43,18 @@ export default function BillingPage() {
 
     // If returning from PhonePe, check status
     if (txn) {
-      checkTransactionStatus(txn);
+      checkTransactionStatus(txn).then((done) => {
+        if (!done) {
+          // Poll every 3 seconds if PENDING
+          const interval = setInterval(async () => {
+            const isDone = await checkTransactionStatus(txn);
+            if (isDone) clearInterval(interval);
+          }, 3000);
+          return () => clearInterval(interval);
+        }
+      });
     }
   }, [txn]);
-
-  const checkTransactionStatus = async (transactionId) => {
-    try {
-      const res = await fetch(`/api/payments/phonepe/status/${transactionId}`);
-      const data = await res.json();
-      if (data.status === 'COMPLETED') {
-        setTxnStatus('SUCCESS');
-      } else if (data.status === 'FAILED') {
-        setTxnStatus('FAILED');
-      } else {
-        setTxnStatus('PENDING');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const handleBuyCredits = async (bundleSize) => {
     setLoading(true);

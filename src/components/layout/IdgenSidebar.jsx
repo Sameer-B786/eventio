@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react';
+import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function EventioSidebar({ userName = "admin" }) {
@@ -16,6 +16,7 @@ export function EventioSidebar({ userName = "admin" }) {
 
     { name: 'Bulk Certificates', href: '/idgen/certificates', icon: FileSpreadsheet },
     { name: 'Event Passes', href: '/idgen/event-pass', icon: Ticket },
+    { name: 'Wallet & Billing', href: '/idgen/billing', icon: CreditCard },
     { 
       name: 'Educational ID Cards', 
       icon: BadgeCheck,
