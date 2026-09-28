@@ -192,7 +192,16 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
   };
 
   if (!records || records.length === 0 || !templateJson) {
-      return null;
+    return (
+      <div className="flex flex-col gap-4 p-4 bg-gray-50 border border-gray-200 border-dashed rounded-xl items-center text-center">
+        <p className="text-gray-500 text-sm">
+          Please upload both an Excel file and a JSON Template to enable generation.
+        </p>
+        <Button disabled className="bg-gray-300 text-gray-500 min-w-[120px]">
+          Start Generation
+        </Button>
+      </div>
+    );
   }
 
   return (
