@@ -19,7 +19,7 @@ export async function POST(req) {
       // Atomic deduction: only works if credits >= amount
       await dynamoDb.send(new UpdateCommand({
         TableName: USERS_TABLE,
-        Key: { userId: session.userId },
+        Key: { userId: session.userInfo.email },
         UpdateExpression: "SET credits = credits - :amount",
         ConditionExpression: "attribute_exists(credits) AND credits >= :amount",
         ExpressionAttributeValues: {

@@ -36,7 +36,7 @@ export async function POST(req) {
       TableName: TRANSACTIONS_TABLE,
       Item: {
         transactionId: order.id,
-        userId: session.userId,
+        userId: session.userInfo.email,
         bundleSize,
         amount: amountInRupees,
         status: 'PENDING',

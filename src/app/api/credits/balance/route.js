@@ -12,7 +12,7 @@ export async function GET() {
 
     const res = await dynamoDb.send(new GetCommand({
       TableName: USERS_TABLE,
-      Key: { userId: session.userId }
+      Key: { userId: session.userInfo.email }
     }));
 
     const credits = res.Item?.credits || 0;
