@@ -6,8 +6,8 @@ import { cn } from "cn";
 export function GlowingHoverEffect({
   children,
   className,
-  glowColor = "rgba(138, 43, 226, 0.4)", // Gemini-like purple-ish default
-  size = 300,
+  glowColor = "rgba(138, 43, 226, 0.85)", // Made significantly brighter
+  size = 400,
 }) {
   const containerRef = React.useRef(null);
 
@@ -101,7 +101,7 @@ export function GlowingBorderCard({
       <div
         className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-0"
         style={{
-          background: `linear-gradient(to right, #8a2be2, #4b0082, #9400d3)`,
+          background: `linear-gradient(to right, #a855f7, #ec4899, #3b82f6)`, // Neon purple, pink, blue for maximum brightness
           maskImage: `radial-gradient(
             250px circle at var(--mouse-x, 0) var(--mouse-y, 0),
             black,
