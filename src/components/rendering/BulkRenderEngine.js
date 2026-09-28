@@ -1,11 +1,13 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGeneratorStore } from '@/store/useGeneratorStore';
 import Konva from 'konva';
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 import { generateBarcodeDataUrl } from '@/lib/barcodeGenerator';
 import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, Wallet } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function BulkRenderEngine({ format = 'CR80' }) {
   const records = useGeneratorStore((state) => state.records);
@@ -15,6 +17,19 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
   
   const [status, setStatus] = useState(null); // e.g., 'Processing 1/50', 'Completed'
   const [downloadUrl, setDownloadUrl] = useState(null);
+  
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const router = useRouter();
+
+  // Fetch balance on mount
+  useEffect(() => {
+    fetch('/api/credits/balance')
+      .then(r => r.json())
+      .then(data => setWalletBalance(data.credits))
+      .catch(console.error);
+  }, []);
 
   // Helper to load an image asynchronously
   const loadImage = (src) => new Promise((resolve) => {
@@ -25,7 +40,13 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
     img.src = src;
   });
 
+  const handleStartGenerationClick = () => {
+    if (walletBalance === null) return; // Still loading balance
+    setShowConfirmModal(true);
+  };
+
   const executeBatchGeneration = async () => {
+    setShowConfirmModal(false);
     if (!records || records.length === 0 || !templateJson) return;
 
     setIsGenerating(true);
@@ -41,13 +62,7 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
       });
 
       if (!deductRes.ok) {
-        if (deductRes.status === 402) {
-          if (confirm(`Insufficient credits! You need ${records.length} credits. Redirect to billing?`)) {
-            window.location.href = '/idgen/billing';
-          }
-        } else {
-          alert("Failed to verify credits. Please try again.");
-        }
+        alert("Failed to deduct credits. Please try again.");
         setStatus(null);
         setIsGenerating(false);
         return;
@@ -181,6 +196,9 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
       const zipUrl = URL.createObjectURL(zipBlob);
       setDownloadUrl(zipUrl);
       setStatus('COMPLETED');
+      
+      // Update UI balance
+      setWalletBalance(prev => prev - records.length);
 
     } catch (err) {
       console.error("Error during client generation", err);
@@ -204,41 +222,98 @@ export default function BulkRenderEngine({ format = 'CR80' }) {
     );
   }
 
+  const cost = records.length;
+  const hasEnoughCredits = walletBalance !== null && walletBalance >= cost;
+
   return (
-    <div className="flex flex-col gap-4 p-4 bg-gray-50 border rounded-xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-800">Ready to Generate</h3>
-          <p className="text-sm text-gray-500">
-            {records.length} records • {templateJson.elements.length} layout elements
-          </p>
+    <>
+      <div className="flex flex-col gap-4 p-4 bg-gray-50 border rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-gray-800">Ready to Generate</h3>
+            <p className="text-sm text-gray-500">
+              {records.length} records • {templateJson.elements.length} layout elements
+            </p>
+          </div>
+          
+          {downloadUrl ? (
+            <Button asChild className="bg-green-600 hover:bg-green-700">
+              <a href={downloadUrl} download="eventio_id_cards.zip">
+                Download ZIP
+              </a>
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleStartGenerationClick} 
+              disabled={isGenerating || walletBalance === null}
+              className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]"
+            >
+              {isGenerating ? 'Generating...' : walletBalance === null ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Start Generation'}
+            </Button>
+          )}
         </div>
-        
-        {downloadUrl ? (
-          <Button asChild className="bg-green-600 hover:bg-green-700">
-            <a href={downloadUrl} download="eventio_id_cards.zip">
-              Download ZIP
-            </a>
-          </Button>
-        ) : (
-          <Button 
-            onClick={executeBatchGeneration} 
-            disabled={isGenerating}
-            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]"
-          >
-            {isGenerating ? 'Generating...' : 'Start Generation'}
-          </Button>
+
+        {status && (
+          <div className="text-sm px-3 py-2 rounded-md font-medium text-gray-700 bg-blue-50 border border-blue-100 flex items-center justify-between">
+             <span>Status: </span>
+             <span className={status === 'COMPLETED' ? 'text-green-600 font-bold' : 'text-blue-600 animate-pulse'}>
+               {status}
+             </span>
+          </div>
         )}
       </div>
 
-      {status && (
-        <div className="text-sm px-3 py-2 rounded-md font-medium text-gray-700 bg-blue-50 border border-blue-100 flex items-center justify-between">
-           <span>Status: </span>
-           <span className={status === 'COMPLETED' ? 'text-green-600 font-bold' : 'text-blue-600 animate-pulse'}>
-             {status}
-           </span>
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {hasEnoughCredits ? (
+              <div className="p-6">
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Confirm Generation</h2>
+                <p className="text-gray-600 mb-6">
+                  You are about to generate <strong>{cost}</strong> documents. This will deduct <strong>{cost} credits</strong> from your wallet.
+                </p>
+                <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-500">Current Balance</span>
+                    <span className="font-semibold">{walletBalance}</span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-2 text-red-500">
+                    <span>Cost</span>
+                    <span>-{cost}</span>
+                  </div>
+                  <div className="h-px bg-gray-200 w-full my-2"></div>
+                  <div className="flex justify-between font-bold text-gray-900">
+                    <span>New Balance</span>
+                    <span>{walletBalance - cost}</span>
+                  </div>
+                </div>
+                <div className="flex gap-3 w-full">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
+                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={executeBatchGeneration}>Confirm & Deduct</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6">
+                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Insufficient Credits</h2>
+                <p className="text-gray-600 mb-6">
+                  You need <strong>{cost} credits</strong> to generate these documents, but you only have <strong>{walletBalance} credits</strong> in your wallet.
+                </p>
+                <div className="flex gap-3 w-full">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
+                  <Button className="flex-1 bg-gray-900 hover:bg-gray-800 text-white" onClick={() => router.push('/idgen/billing')}>Top Up Wallet</Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
