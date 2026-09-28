@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CreditCard, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const txn = searchParams.get('txn');
   
@@ -169,5 +169,13 @@ export default function BillingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" /></div>}>
+      <BillingContent />
+    </Suspense>
   );
 }
