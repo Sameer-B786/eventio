@@ -28,9 +28,10 @@ export async function broadcastToEvent(eventId, eventType, payload) {
   }
 
   try {
-    // 1. Fetch all connection IDs for this eventId from DynamoDB
+    // 1. Fetch all connection IDs for this eventId from DynamoDB using GSI
     const queryParams = {
       TableName: CONNECTIONS_TABLE,
+      IndexName: "eventId-index",
       KeyConditionExpression: "eventId = :eid",
       ExpressionAttributeValues: {
         ":eid": eventId
@@ -57,7 +58,7 @@ export async function broadcastToEvent(eventId, eventType, payload) {
         if (e.$metadata?.httpStatusCode === 410) {
           await dynamoDb.send(new DeleteCommand({
             TableName: CONNECTIONS_TABLE,
-            Key: { eventId, connectionId: conn.connectionId }
+            Key: { connectionId: conn.connectionId }
           }));
         } else {
           console.error(`Failed to send to ${conn.connectionId}:`, e);
