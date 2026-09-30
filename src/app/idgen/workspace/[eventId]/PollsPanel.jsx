@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BarChart2, Plus } from "lucide-react";
 
-export default function PollsPanel({ eventId, isActive, polls }) {
+export default function PollsPanel({ eventId, isActive, polls, isHost }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);
@@ -40,7 +40,7 @@ export default function PollsPanel({ eventId, isActive, polls }) {
         <h3 className="font-semibold text-gray-800 flex items-center gap-2">
           <BarChart2 className="h-5 w-5 text-purple-600" /> Live Polls
         </h3>
-        {isActive && (
+        {isActive && isHost && (
           <Button variant="ghost" size="icon" onClick={() => setIsCreating(!isCreating)} className="h-8 w-8 text-purple-600 hover:bg-purple-50 rounded-full">
             <Plus className="h-4 w-4" />
           </Button>

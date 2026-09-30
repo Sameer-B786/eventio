@@ -26,7 +26,8 @@ export async function GET(req, { params }) {
     
     if (Items && Items.length > 0) {
       const Item = Items[0];
-      return NextResponse.json({ ...Item, id: Item.eventId });
+      const isHost = Item.userId === session.userInfo.email;
+      return NextResponse.json({ ...Item, id: Item.eventId, isHost });
     }
 
     return NextResponse.json({ error: "Not found" }, { status: 404 });

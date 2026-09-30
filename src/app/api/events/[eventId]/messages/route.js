@@ -59,7 +59,7 @@ export async function POST(req, { params }) {
       id: uuidv4(),
       eventId,
       userId: session.userInfo.email,
-      userName: body.userName || session.userInfo.email.split('@')[0],
+      userName: session.userInfo.email === creatorId ? "Host" : "Attendee",
       content: body.content.trim(),
       createdAt: new Date().toISOString(),
     };
