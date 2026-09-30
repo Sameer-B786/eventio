@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { useGeneratorStore } from '@/store/useGeneratorStore';
 import { validateRecordsBulk, schemas } from '@/lib/excelValidator';
 
@@ -12,22 +12,84 @@ export default function ExcelDropzone({ schemaType }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet);
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length === 0) return;
+        const headers = lines[0].split(',').map(h => h.trim());
+        const json = [];
+        for (let i = 1; i < lines.length; i++) {
+           const values = lines[i].split(',').map(v => v.trim());
+           const rowData = {};
+           headers.forEach((h, idx) => { rowData[h] = values[idx] || ''; });
+           json.push(rowData);
+        }
+        const validationErrors = validateRecordsBulk(json, schemaType);
+        if (validationErrors.length > 0) {
+          setErrors(validationErrors);
+          setRecords([]);
+        } else {
+          setErrors([]);
+          setRecords(json);
+        }
+      };
+      reader.readAsText(file);
+      return;
+    }
 
-      const validationErrors = validateRecordsBulk(json, schemaType);
-      
-      if (validationErrors.length > 0) {
-        setErrors(validationErrors);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const buffer = event.target.result;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const worksheet = workbook.worksheets[0];
+        
+        if (!worksheet) {
+          setErrors(["No sheets found in the workbook."]);
+          setRecords([]);
+          return;
+        }
+
+        const json = [];
+        let headers = [];
+        
+        worksheet.eachRow((row, rowNumber) => {
+          const rowValues = Array.isArray(row.values) ? row.values.slice(1) : [];
+          if (rowNumber === 1) {
+            headers = rowValues.map(h => h ? h.toString().trim() : '');
+          } else {
+            const rowData = {};
+            rowValues.forEach((val, idx) => {
+               const headerName = headers[idx];
+               if (headerName) {
+                  let cellValue = val;
+                  if (val && typeof val === 'object') {
+                      if (val.result !== undefined) cellValue = val.result;
+                      else if (val.text !== undefined) cellValue = val.text;
+                  }
+                  rowData[headerName] = cellValue;
+               }
+            });
+            json.push(rowData);
+          }
+        });
+
+        const validationErrors = validateRecordsBulk(json, schemaType);
+        
+        if (validationErrors.length > 0) {
+          setErrors(validationErrors);
+          setRecords([]);
+        } else {
+          setErrors([]);
+          setRecords(json);
+        }
+      } catch (err) {
+        console.error(err);
+        setErrors(["Failed to parse Excel file. Please ensure it is a valid .xlsx file."]);
         setRecords([]);
-      } else {
-        setErrors([]);
-        setRecords(json);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -35,7 +97,7 @@ export default function ExcelDropzone({ schemaType }) {
 
   return (
     <div className="p-4 border-2 border-dashed border-gray-300 rounded text-center">
-      <input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileUpload} className="mb-4" />
+      <input type="file" accept=".xlsx, .csv" onChange={handleFileUpload} className="mb-4" />
       <p className="text-gray-800 font-medium mb-2">Upload Excel/CSV Data</p>
       
       {/* Guidelines Block */}
