@@ -93,9 +93,24 @@ export default function SignUp() {
                 className="rounded-xl"
               />
             </div>
+            {username && (
+              <div className="mt-3 space-y-1.5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Username condition:</p>
+                {[
+                  { label: "No spaces", met: /^\S+$/.test(username) },
+                ].map((c, i) => (
+                  <div key={i} className="flex items-center text-xs">
+                    {c.met ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mr-2 shrink-0" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5 text-gray-300 mr-2 shrink-0" />
+                    )}
+                    <span className={c.met ? "text-emerald-700" : "text-gray-500"}>{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
-
 
           <div>
             <Label htmlFor="email">Email Address</Label>
@@ -166,7 +181,8 @@ export default function SignUp() {
                 /[a-z]/.test(password) && 
                 /[0-9]/.test(password) && 
                 /[^A-Za-z0-9]/.test(password)
-              ))
+              )) ||
+              (username.length > 0 && /\s/.test(username))
             }
           >
             {isLoading ? "Signing up..." : "Sign up"}

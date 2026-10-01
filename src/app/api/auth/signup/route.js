@@ -2,11 +2,9 @@ import { NextResponse } from 'next/server';
 import { CognitoIdentityProviderClient, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 
-const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
-const CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET;
-const REGION = process.env.COGNITO_REGION || 'ap-south-1';
-
 function calculateSecretHash(username) {
+  const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
+  const CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET;
   if (!CLIENT_SECRET) return undefined;
   return crypto
     .createHmac('SHA256', CLIENT_SECRET)
@@ -31,6 +29,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Only .com and .in email domains are allowed' }, { status: 400 });
     }
 
+    const REGION = process.env.COGNITO_REGION || 'ap-south-1';
     const client = new CognitoIdentityProviderClient({ region: REGION });
     
     // Use the provided username as the Cognito Username
@@ -58,7 +57,7 @@ export async function POST(request) {
     });
 
     const command = new SignUpCommand({
-      ClientId: CLIENT_ID,
+      ClientId: process.env.COGNITO_CLIENT_ID,
       Username: generatedUsername,
       Password: password,
       SecretHash: secretHash,
