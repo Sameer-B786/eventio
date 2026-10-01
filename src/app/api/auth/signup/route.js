@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server';
 import { CognitoIdentityProviderClient, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 
-function calculateSecretHash(username) {
-  const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
+function calculateSecretHash(username, clientId) {
   const CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET;
-  if (!CLIENT_SECRET) return undefined;
+  if (!CLIENT_SECRET || !clientId) return undefined;
   return crypto
     .createHmac('SHA256', CLIENT_SECRET)
-    .update(username + CLIENT_ID)
+    .update(username + clientId)
     .digest('base64');
 }
 
@@ -32,9 +31,17 @@ export async function POST(request) {
     const REGION = process.env.COGNITO_REGION || 'ap-south-1';
     const client = new CognitoIdentityProviderClient({ region: REGION });
     
+    const clientId = process.env.COGNITO_CLIENT_ID;
+    console.log('DEBUG: COGNITO_CLIENT_ID is:', clientId ? 'Set' : 'UNDEFINED');
+    
+    if (!clientId) {
+      console.error('CRITICAL: COGNITO_CLIENT_ID environment variable is missing.');
+      return NextResponse.json({ error: 'Server configuration error: Missing Cognito Client ID. Please restart your Next.js dev server if you just added it to .env.local' }, { status: 500 });
+    }
+
     // Use the provided username as the Cognito Username
     const generatedUsername = username;
-    const secretHash = calculateSecretHash(generatedUsername);
+    const secretHash = calculateSecretHash(generatedUsername, clientId);
 
     const userAttributes = [
       {
@@ -57,7 +64,7 @@ export async function POST(request) {
     });
 
     const command = new SignUpCommand({
-      ClientId: process.env.COGNITO_CLIENT_ID,
+      ClientId: clientId,
       Username: generatedUsername,
       Password: password,
       SecretHash: secretHash,
