@@ -128,6 +128,9 @@ export default function CreateEventPage() {
                 onChange={handleChange}
                 className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
+              <p className="text-[11px] text-gray-500">
+                You can format links like this: <code>[Link Text](https://example.com)</code>
+              </p>
             </div>
 
             <div className="space-y-2">

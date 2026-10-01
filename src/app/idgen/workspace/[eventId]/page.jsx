@@ -104,11 +104,42 @@ export default function EventWorkspacePage({ params }) {
             <div className="flex-1">
               <h3 className="font-medium text-sm flex items-center gap-1 mb-1 text-gray-800"><Info className="h-4 w-4" /> Description</h3>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                {eventData.description?.split(/(https?:\/\/[^\s]+)/g).map((part, index) => 
-                  part.match(/(https?:\/\/[^\s]+)/) 
-                    ? <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">{part}</a>
-                    : part
-                )}
+                {(() => {
+                  const text = eventData.description || "";
+                  const markdownRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
+                  const parts = [];
+                  let lastIndex = 0;
+                  
+                  text.replace(markdownRegex, (match, label, url, offset) => {
+                    const precedingText = text.slice(lastIndex, offset);
+                    if (precedingText) {
+                      const rawParts = precedingText.split(/(https?:\/\/[^\s]+)/g);
+                      rawParts.forEach((p, i) => {
+                        if (p.match(/^https?:\/\/[^\s]+$/)) {
+                          parts.push(<a key={`raw-${offset}-${i}`} href={p} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">{p}</a>);
+                        } else if (p) {
+                          parts.push(p);
+                        }
+                      });
+                    }
+                    parts.push(<a key={`md-${offset}`} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">{label}</a>);
+                    lastIndex = offset + match.length;
+                  });
+
+                  const remainingText = text.slice(lastIndex);
+                  if (remainingText) {
+                    const rawParts = remainingText.split(/(https?:\/\/[^\s]+)/g);
+                    rawParts.forEach((p, i) => {
+                      if (p.match(/^https?:\/\/[^\s]+$/)) {
+                        parts.push(<a key={`raw-end-${i}`} href={p} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">{p}</a>);
+                      } else if (p) {
+                        parts.push(p);
+                      }
+                    });
+                  }
+
+                  return parts;
+                })()}
               </p>
             </div>
             
