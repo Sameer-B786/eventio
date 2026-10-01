@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 export function EventioSidebar({ userName = "admin" }) {
   const [openMenu, setOpenMenu] = useState({});
   const [allEvents, setAllEvents] = useState([]);
+  const [now, setNow] = useState(Date.now());
   const pathname = usePathname();
 
   useEffect(() => {
@@ -17,6 +18,18 @@ export function EventioSidebar({ userName = "admin" }) {
       .then(data => setAllEvents(data))
       .catch(console.error);
   }, [pathname]);
+
+  // Update time every minute to trigger a re-render and sweep expired events
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const activeEvents = allEvents.filter((event) => {
+    if (!event.endTime) return true;
+    const expireTimeMs = new Date(event.endTime).getTime() + (2 * 60 * 60 * 1000);
+    return now < expireTimeMs;
+  });
 
   const navigation = [
     { name: 'Home', href: '/idgen', icon: Home },
@@ -126,10 +139,10 @@ export function EventioSidebar({ userName = "admin" }) {
         <div className="mt-6 pt-4 border-t border-gray-100">
           <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Events Section</h3>
           <div className="space-y-1">
-            {allEvents.length === 0 ? (
+            {activeEvents.length === 0 ? (
               <p className="px-4 text-xs text-gray-400">No events found.</p>
             ) : (
-              allEvents.map((event) => {
+              activeEvents.map((event) => {
                 const isActive = pathname === `/idgen/workspace/${event.id}`;
                 return (
                   <Link
