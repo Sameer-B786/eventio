@@ -16,7 +16,7 @@ export function EventioSidebar({ userName = "admin" }) {
       .then(res => res.ok ? res.json() : [])
       .then(data => setAllEvents(data))
       .catch(console.error);
-  }, []);
+  }, [pathname]);
 
   const navigation = [
     { name: 'Home', href: '/idgen', icon: Home },
