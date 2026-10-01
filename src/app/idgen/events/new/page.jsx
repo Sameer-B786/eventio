@@ -110,6 +110,9 @@ export default function CreateEventPage() {
                 <ImageIcon className="h-4 w-4 text-gray-500" /> Event Banner
               </Label>
               <Input id="banner" name="banner" type="file" accept="image/*" onChange={handleFileChange} className="cursor-pointer" />
+              <p className="text-xs text-gray-500">
+                Recommended dimensions: 1200 x 600px (2:1 ratio). Maximum file size: 5MB.
+              </p>
             </div>
 
             <div className="space-y-2">
