@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight, CreditCard } from 'lucide-react';
+import { Home, Ticket, BadgeCheck, LogOut, ArrowLeft, Fingerprint, CalendarPlus, Users, FileSpreadsheet, ChevronDown, ChevronRight, CreditCard, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function EventioSidebar({ userName = "admin" }) {
   const [openMenu, setOpenMenu] = useState({});
+  const [allEvents, setAllEvents] = useState([]);
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch('/api/events/all', { cache: 'no-store', next: { revalidate: 0 } })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setAllEvents(data))
+      .catch(console.error);
+  }, []);
 
   const navigation = [
     { name: 'Home', href: '/idgen', icon: Home },
@@ -45,7 +53,7 @@ export function EventioSidebar({ userName = "admin" }) {
         Eventio
       </div>
       
-      <nav className="flex-1 px-4 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           if (item.children) {
             const isChildActive = item.children.some(child => pathname === child.href.split('?')[0]);
@@ -113,6 +121,37 @@ export function EventioSidebar({ userName = "admin" }) {
             </Link>
           );
         })}
+        
+        {/* Events Section */}
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Events Section</h3>
+          <div className="space-y-1">
+            {allEvents.length === 0 ? (
+              <p className="px-4 text-xs text-gray-400">No events found.</p>
+            ) : (
+              allEvents.map((event) => {
+                const isActive = pathname === `/idgen/workspace/${event.id}`;
+                return (
+                  <Link
+                    key={event.id}
+                    href={`/idgen/workspace/${event.id}`}
+                    className={cn(
+                      'flex items-center px-4 py-2 text-sm font-medium rounded-full transition-colors',
+                      isActive
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    )}
+                  >
+                    <div className="flex items-center truncate">
+                      <div className="w-2 h-2 rounded-full bg-blue-400 mr-3 flex-shrink-0" />
+                      <span className="truncate">{event.name}</span>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </div>
       </nav>
 
       <div className="p-4 mt-auto">
