@@ -171,7 +171,7 @@ export default function EventWorkspacePage({ params }) {
       </div>
 
       <div className="w-full md:w-80 lg:w-96 flex flex-col shrink-0">
-        <Card className="flex-1 flex flex-col overflow-hidden shadow-sm p-4">
+        <Card className="flex-1 flex flex-col overflow-hidden shadow-sm p-4 min-h-0">
           <PollsPanel eventId={eventId} isActive={statusInfo.isLive} polls={polls} isHost={eventData.isHost} />
         </Card>
       </div>

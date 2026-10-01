@@ -47,7 +47,7 @@ export default function PollsPanel({ eventId, isActive, polls, isHost }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto space-y-6 pr-2">
         {isCreating && (
           <form onSubmit={handleCreatePoll} className="bg-purple-50 p-3 rounded-lg border border-purple-100 space-y-3">
             <input 
