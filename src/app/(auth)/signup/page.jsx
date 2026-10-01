@@ -44,7 +44,7 @@ export default function SignUp() {
         });
 
         if (loginRes.ok) {
-          router.push('/dashboard');
+          router.push('/idgen');
           router.refresh();
         } else {
           router.push('/login?message=signup_success_please_login');
