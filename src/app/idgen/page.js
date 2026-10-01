@@ -36,6 +36,13 @@ export default function EventioWizardPage() {
       <div className="max-w-5xl w-full">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12 text-center relative overflow-hidden">
           
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="absolute top-6 right-6 md:top-8 md:right-8 flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors z-10"
+          >
+            Move to Dashboard
+          </button>
+
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
