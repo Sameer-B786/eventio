@@ -66,6 +66,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* The Problems We Solve Section */}
+      <section className="py-24 bg-indigo-50/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Eventio?</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto">We built Eventio to solve the most painful and expensive problems faced by institutions and event organizers.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-6">
+                <FileSpreadsheet className="h-7 w-7" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Certificate Nightmares</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Struggling to create and distribute certificates for hackathons, competitions, and events? Eventio automates bulk generation, turning hours of manual work into seconds.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-6">
+                <BadgeCheck className="h-7 w-7" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Expensive ID Cards</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Colleges and schools spend thousands of rupees just getting basic ID cards printed. With Eventio, design and generate professional institutional IDs at a fraction of the cost.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Fake Attendees</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Large offline events often struggle to filter out unregistered or fake attendees. Our secure event passes with dynamic barcodes ensure only valid participants get through the door.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
