@@ -50,7 +50,7 @@ export default function Login() {
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Eventio</h2>
         </div>
         
-        <form autoComplete="off" className="space-y-6" onSubmit={handleLogin}>
+        <form className="space-y-6" onSubmit={handleLogin}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
@@ -60,7 +60,7 @@ export default function Login() {
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="off"
+                autoComplete="username"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -85,7 +85,7 @@ export default function Login() {
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="off"
+                autoComplete="current-password"
                 autoCorrect="off"
                 spellCheck="false"
                 required 

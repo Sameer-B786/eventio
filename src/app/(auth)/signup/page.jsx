@@ -72,7 +72,7 @@ export default function SignUp() {
           <p className="text-gray-500 mt-2">Create a new account</p>
         </div>
         
-        <form autoComplete="off" className="space-y-4" onSubmit={handleSignUp}>
+        <form className="space-y-4" onSubmit={handleSignUp}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
@@ -82,7 +82,7 @@ export default function SignUp() {
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="off"
+                autoComplete="username"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -119,7 +119,7 @@ export default function SignUp() {
                 id="email" 
                 name="email" 
                 type="email" 
-                autoComplete="off"
+                autoComplete="email"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -137,7 +137,7 @@ export default function SignUp() {
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="off"
+                autoComplete="new-password"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
