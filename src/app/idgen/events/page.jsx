@@ -44,9 +44,6 @@ export default function EventsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Events</h1>
           <p className="text-gray-500 mt-1">Discover live and upcoming events</p>
         </div>
-        <Link href="/idgen/events/new">
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Create Event</Button>
-        </Link>
       </div>
 
       {events.length === 0 ? (
@@ -56,9 +53,6 @@ export default function EventsPage() {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No events found</h2>
           <p className="text-gray-500 mb-6">There are currently no live or upcoming events.</p>
-          <Link href="/idgen/events/new">
-            <Button variant="outline">Create your first event</Button>
-          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
