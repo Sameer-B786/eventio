@@ -34,7 +34,7 @@ export function EventioSidebar({ userName = "admin" }) {
   const navigation = [
     { name: 'Home', href: '/idgen', icon: Home },
     { name: 'Create Event', href: '/idgen/events/new', icon: CalendarPlus },
-
+    { name: 'Events', href: '/idgen/events', icon: Calendar },
     { name: 'Bulk Certificates', href: '/idgen/certificates', icon: FileSpreadsheet },
     { name: 'Event Passes', href: '/idgen/event-pass', icon: Ticket },
     { name: 'Wallet & Billing', href: '/idgen/billing', icon: CreditCard },
