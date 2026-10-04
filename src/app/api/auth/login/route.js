@@ -40,10 +40,17 @@ export async function POST(request) {
     const response = await client.send(command);
 
     if (response.AuthenticationResult) {
-      // Create session with tokens
+      const idToken = response.AuthenticationResult.IdToken;
+      const decoded = decodeJwt(idToken);
+      
+      // Create session with tokens and extracted userInfo
       await createSession({
         accessToken: response.AuthenticationResult.AccessToken,
-        idToken: response.AuthenticationResult.IdToken,
+        idToken,
+        userInfo: {
+          email: decoded.email,
+          name: decoded.name || decoded.email?.split('@')[0],
+        }
       });
 
       return NextResponse.json({ success: true });

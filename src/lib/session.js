@@ -1,65 +1,44 @@
 import { cookies } from 'next/headers';
-import { decodeJwt, jwtVerify, createRemoteJWKSet } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
-// Lazy-load JWKS to ensure process.env is fully initialized by Next.js
-let JWKS;
-function getJWKS() {
-  if (!JWKS) {
-    JWKS = createRemoteJWKSet(
-      new URL(`https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`),
-      { timeoutDuration: 15000 }
-    );
-  }
-  return JWKS;
-}
+// Use Cognito Client Secret as our signing key
+const SECRET = new TextEncoder().encode(
+  process.env.COGNITO_CLIENT_SECRET || 'fallback_secret_for_development_only_123'
+);
 
-export async function createSession({ idToken, accessToken }) {
+export async function createSession({ idToken, accessToken, userInfo }) {
   const cookieStore = await cookies();
-  const decoded = decodeJwt(idToken);
   
-  cookieStore.set('idToken', idToken, {
-    expires: new Date(decoded.exp * 1000),
+  // Create a 30-day persistent session token
+  const token = await new SignJWT(userInfo)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(SECRET);
+  
+  cookieStore.set('eventio_session', token, {
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
   });
-
-  if (accessToken) {
-    cookieStore.set('accessToken', accessToken, {
-      expires: new Date(decoded.exp * 1000),
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
-  }
 }
 
 export async function getSession() {
   try {
     const cookieStore = await cookies();
-    const idToken = cookieStore.get('idToken')?.value;
-    if (!idToken) return null;
+    const token = cookieStore.get('eventio_session')?.value;
+    if (!token) return null;
     
-    // Cryptographically verify the token
-    const { payload } = await jwtVerify(idToken, getJWKS(), {
-      issuer: `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
-    });
-    
-    // Check if token is expired
-    if (payload.exp * 1000 < Date.now()) {
-      return null;
-    }
-    
-    const accessToken = cookieStore.get('accessToken')?.value;
+    // Verify our custom token
+    const { payload } = await jwtVerify(token, SECRET);
     
     return {
       userInfo: {
         email: payload.email,
-        name: payload.name || payload.email?.split('@')[0],
-      },
-      accessToken
+        name: payload.name,
+      }
     };
   } catch (error) {
     console.error('Session Error:', error.message);
@@ -69,14 +48,12 @@ export async function getSession() {
 
 export async function clearSession() {
   const cookieStore = await cookies();
-  cookieStore.set('idToken', '', {
+  cookieStore.set('eventio_session', '', {
     expires: new Date(0),
     httpOnly: true,
     path: '/',
   });
-  cookieStore.set('accessToken', '', {
-    expires: new Date(0),
-    httpOnly: true,
-    path: '/',
-  });
+  // Clear old tokens just in case
+  cookieStore.set('idToken', '', { expires: new Date(0), path: '/' });
+  cookieStore.set('accessToken', '', { expires: new Date(0), path: '/' });
 }
