@@ -44,7 +44,7 @@ export default function SignUp() {
         });
 
         if (loginRes.ok) {
-          router.push('/idgen');
+          window.location.href = '/idgen';
           return; // Do not reset isLoading
         } else {
           router.push('/login?message=signup_success_please_login');
@@ -173,6 +173,7 @@ export default function SignUp() {
 
           <Button 
             type="submit" 
+            onClick={handleSignUp}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" 
             disabled={
               isLoading || 

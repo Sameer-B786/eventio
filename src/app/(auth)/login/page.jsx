@@ -27,7 +27,7 @@ export default function Login() {
       });
       
       if (res.ok) {
-        router.push('/idgen');
+        window.location.href = '/idgen';
         // Do not reset isLoading here to keep the button in "Signing in..." state during navigation
       } else {
         let errorMessage = 'Invalid credentials';
@@ -101,7 +101,7 @@ export default function Login() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
+          <Button type="submit" onClick={handleLogin} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
