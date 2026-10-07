@@ -105,7 +105,7 @@ function VerifyForm() {
           </Button>
 
           <div className="text-center text-sm text-gray-500 mt-4">
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
               Back to login
             </Link>
           </div>
