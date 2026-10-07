@@ -27,14 +27,19 @@ export default function Login() {
       });
       
       if (res.ok) {
-        window.location.href = '/idgen';
+        router.push('/idgen');
+        // Do not reset isLoading here to keep the button in "Signing in..." state during navigation
       } else {
-        const data = await res.json();
-        setError(data.error || 'Invalid credentials');
+        let errorMessage = 'Invalid credentials';
+        try {
+          const data = await res.json();
+          if (data.error) errorMessage = data.error;
+        } catch (e) {}
+        setError(errorMessage);
+        setIsLoading(false);
       }
     } catch (err) {
       setError('An error occurred during login');
-    } finally {
       setIsLoading(false);
     }
   };

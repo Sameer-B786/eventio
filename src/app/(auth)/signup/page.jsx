@@ -44,18 +44,20 @@ export default function SignUp() {
         });
 
         if (loginRes.ok) {
-          window.location.href = '/idgen';
+          router.push('/idgen');
+          return; // Do not reset isLoading
         } else {
           router.push('/login?message=signup_success_please_login');
+          return; // Do not reset isLoading
         }
       } else {
         // User needs to confirm email via OTP
         router.push(`/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`);
+        return; // Do not reset isLoading
       }
       
     } catch (err) {
       setError(err.message || 'An error occurred during sign up');
-    } finally {
       setIsLoading(false);
     }
   };
