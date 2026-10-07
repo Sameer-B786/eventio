@@ -100,7 +100,7 @@ export default function ForgotPassword() {
 
             <div className="text-center text-sm text-gray-500 mt-4">
               Remember your password?{' '}
-              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link href="/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
                 Back to login
               </Link>
             </div>
@@ -167,7 +167,7 @@ export default function ForgotPassword() {
             </div>
             
             <div className="text-center text-sm text-gray-500 mt-4">
-              <Link href="/login" className="inline-flex w-full justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-medium transition-colors">
+              <Link href="/signin" className="inline-flex w-full justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-medium transition-colors">
                 Return to Login
               </Link>
             </div>
