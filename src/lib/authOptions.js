@@ -30,7 +30,10 @@ export const authOptions = {
 
         const client = new CognitoIdentityProviderClient({ 
           region: REGION,
-          credentials: { accessKeyId: undefined, secretAccessKey: undefined }
+          credentials: {
+            accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY,
+          }
         });
         
         const secretHash = calculateSecretHash(credentials.username);
