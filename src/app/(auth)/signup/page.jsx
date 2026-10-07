@@ -40,7 +40,7 @@ export default function SignUp() {
         const loginRes = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ username, password }),
         });
 
         if (loginRes.ok) {
@@ -72,12 +72,12 @@ export default function SignUp() {
           <p className="text-gray-500 mt-2">Create a new account</p>
         </div>
         
-        <form className="space-y-4" onSubmit={handleSignUp}>
+        <form className="space-y-6" onSubmit={handleSignUp}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
             <Label htmlFor="username">Username</Label>
-            <div className="mt-1">
+            <div className="mt-2">
               <Input 
                 id="username" 
                 name="username" 
@@ -114,7 +114,7 @@ export default function SignUp() {
 
           <div>
             <Label htmlFor="email">Email Address</Label>
-            <div className="mt-1">
+            <div className="mt-2">
               <Input 
                 id="email" 
                 name="email" 
@@ -132,7 +132,7 @@ export default function SignUp() {
 
           <div>
             <Label htmlFor="password">Password</Label>
-            <div className="mt-1">
+            <div className="mt-2">
               <Input 
                 id="password" 
                 name="password" 
@@ -172,7 +172,7 @@ export default function SignUp() {
 
           <Button 
             type="submit" 
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-5" 
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" 
             disabled={
               isLoading || 
               (password.length > 0 && !(
@@ -190,7 +190,7 @@ export default function SignUp() {
 
           <div className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/login" className="font-medium text-primary hover:text-primary/80">
               Sign in
             </Link>
           </div>
