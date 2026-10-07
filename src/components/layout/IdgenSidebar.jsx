@@ -52,8 +52,9 @@ export function EventioSidebar({ userName = "admin" }) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
+    // next-auth signOut handles cookie clearance and redirect
+    const { signOut } = await import('next-auth/react');
+    await signOut({ callbackUrl: '/login' });
   };
 
   if (pathname === '/idgen') return null;

@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
+import { signIn } from 'next-auth/react';
+
 export default function SignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -44,23 +46,17 @@ export default function SignUp() {
 
       if (signupData.userConfirmed) {
         // Automatically try to log them in to redirect to dashboard
-        const loginController = new AbortController();
-        const loginTimeoutId = setTimeout(() => loginController.abort(), 10000);
-
-        const loginRes = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-          signal: loginController.signal
+        const result = await signIn('credentials', {
+          redirect: false,
+          username,
+          password,
         });
 
-        clearTimeout(loginTimeoutId);
-
-        if (loginRes.ok) {
-          window.location.href = '/idgen';
+        if (result?.error) {
+          window.location.href = '/login?message=signup_success_please_login';
           return; // Do not reset isLoading
         } else {
-          window.location.href = '/login?message=signup_success_please_login';
+          window.location.href = '/idgen';
           return; // Do not reset isLoading
         }
       } else {

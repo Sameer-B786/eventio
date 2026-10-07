@@ -24,10 +24,7 @@ export async function POST(request) {
 
     const client = new CognitoIdentityProviderClient({ 
       region: REGION,
-      credentials: {
-        accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY,
-      }
+      credentials: { accessKeyId: undefined, secretAccessKey: undefined }
     });
     const secretHash = calculateSecretHash(email);
 

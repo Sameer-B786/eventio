@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import { signIn } from 'next-auth/react';
+
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,37 +23,21 @@ export default function Login() {
     setError('');
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-        signal: controller.signal
+      const result = await signIn('credentials', {
+        redirect: false,
+        username,
+        password,
       });
-      
-      clearTimeout(timeoutId);
 
-      if (res.ok) {
-        // Force navigation
-        window.location.href = '/idgen';
-        // We purposely do not reset isLoading here so the spinner stays visible until the page reloads
-      } else {
-        let errorMessage = 'Invalid credentials';
-        try {
-          const data = await res.json();
-          if (data.error) errorMessage = data.error;
-        } catch (e) {}
-        setError(errorMessage);
+      if (result?.error) {
+        setError(result.error);
         setIsLoading(false);
+      } else {
+        // NextAuth handles the session cookie, just force navigate
+        window.location.href = '/idgen';
       }
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. The server took too long to respond.');
-      } else {
-        setError('An error occurred during login. Please try again.');
-      }
+      setError('An error occurred during login. Please try again.');
       setIsLoading(false);
     }
   };
