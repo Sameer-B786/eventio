@@ -20,11 +20,17 @@ export default function Login() {
     setError('');
     
     try {
-      const result = await signIn('credentials', {
+      const signInPromise = signIn('credentials', {
         redirect: false,
         username,
         password,
       });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      );
+
+      const result = await Promise.race([signInPromise, timeoutPromise]);
 
       if (result?.error) {
         setError(result.error);
@@ -34,7 +40,11 @@ export default function Login() {
         window.location.href = '/idgen';
       }
     } catch (err) {
-      setError('An error occurred during login. Please try again.');
+      if (err.message === 'TIMEOUT') {
+        setError('Request timed out. The server took too long to respond.');
+      } else {
+        setError('An error occurred during login. Please try again.');
+      }
       setIsLoading(false);
     }
   };
