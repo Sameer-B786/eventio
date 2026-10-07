@@ -24,7 +24,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
-    const client = new CognitoIdentityProviderClient({ region: REGION });
+    const client = new CognitoIdentityProviderClient({ 
+      region: REGION,
+      credentials: {
+        accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY,
+      }
+    });
     const secretHash = calculateSecretHash(username);
 
     const command = new InitiateAuthCommand({

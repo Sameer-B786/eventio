@@ -22,7 +22,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email and verification code are required' }, { status: 400 });
     }
 
-    const client = new CognitoIdentityProviderClient({ region: REGION });
+    const client = new CognitoIdentityProviderClient({ 
+      region: REGION,
+      credentials: {
+        accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY,
+      }
+    });
     
     // We MUST use the actual UUID username if it's provided, otherwise fallback to email alias (which is buggy)
     const actualUsername = username || email;

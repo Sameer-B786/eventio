@@ -22,7 +22,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email, code, and new password are required' }, { status: 400 });
     }
 
-    const client = new CognitoIdentityProviderClient({ region: REGION });
+    const client = new CognitoIdentityProviderClient({ 
+      region: REGION,
+      credentials: {
+        accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY,
+      }
+    });
     const secretHash = calculateSecretHash(email);
 
     const command = new ConfirmForgotPasswordCommand({
