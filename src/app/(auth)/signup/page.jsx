@@ -44,8 +44,7 @@ export default function SignUp() {
         });
 
         if (loginRes.ok) {
-          router.push('/idgen');
-          router.refresh();
+          window.location.href = '/idgen';
         } else {
           router.push('/login?message=signup_success_please_login');
         }

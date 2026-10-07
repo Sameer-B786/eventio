@@ -27,8 +27,7 @@ export default function Login() {
       });
       
       if (res.ok) {
-        router.push('/idgen');
-        router.refresh();
+        window.location.href = '/idgen';
       } else {
         const data = await res.json();
         setError(data.error || 'Invalid credentials');
