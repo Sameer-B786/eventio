@@ -40,25 +40,12 @@ export default function SignUp() {
 
       const signupData = await signupRes.json();
       
-      let shouldLogin = false;
-
       if (!signupRes.ok) {
-        if (signupData.error === 'An account with this username already exists') {
-          // One-time login logic: if they try to sign up but exist, just log them in!
-          shouldLogin = true;
-        } else {
-          throw new Error(signupData.error || 'Sign up failed');
-        }
-      } else if (signupData.userConfirmed) {
-        shouldLogin = true;
-      } else {
-        // User needs to confirm email via OTP
-        window.location.href = `/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`;
-        return; // Do not reset isLoading
+        throw new Error(signupData.error || 'Sign up failed');
       }
 
-      if (shouldLogin) {
-        // Automatically log them in to redirect to dashboard
+      if (signupData.userConfirmed) {
+        // Automatically try to log them in to redirect to dashboard
         const result = await signIn('credentials', {
           redirect: false,
           username,
@@ -66,13 +53,17 @@ export default function SignUp() {
         });
 
         if (result?.error) {
-          setError('Invalid credentials for existing account. Please try again or contact support.');
+          setError('Account created, but automatic login failed. Please try signing in.');
           setIsLoading(false);
           return;
         } else {
           window.location.href = '/idgen';
           return; // Do not reset isLoading
         }
+      } else {
+        // User needs to confirm email via OTP
+        window.location.href = `/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`;
+        return; // Do not reset isLoading
       }
       
     } catch (err) {
@@ -212,7 +203,13 @@ export default function SignUp() {
             {isLoading ? "Signing up..." : "Sign up"}
           </Button>
 
-          </form>
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-primary hover:text-primary/80">
+              Sign in
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );

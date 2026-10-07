@@ -7,11 +7,6 @@ const nextConfig = {
         destination: '/idgen',
         permanent: false,
       },
-      {
-        source: '/login',
-        destination: '/signup',
-        permanent: true,
-      },
     ];
   },
 };

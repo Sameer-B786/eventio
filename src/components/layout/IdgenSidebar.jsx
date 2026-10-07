@@ -54,7 +54,7 @@ export function EventioSidebar({ userName = "admin" }) {
   const handleLogout = async () => {
     // next-auth signOut handles cookie clearance and redirect
     const { signOut } = await import('next-auth/react');
-    await signOut({ callbackUrl: '/signup' });
+    await signOut({ callbackUrl: '/login' });
   };
 
   if (pathname === '/idgen') return null;
