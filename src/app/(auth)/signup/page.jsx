@@ -185,8 +185,7 @@ export default function SignUp() {
           </div>
 
           <Button 
-            type="button" 
-            onClick={handleSignUp}
+            type="submit" 
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" 
             disabled={
               isLoading || 

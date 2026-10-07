@@ -99,7 +99,7 @@ export default function Login() {
             </div>
           </div>
 
-          <Button type="button" onClick={handleLogin} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
