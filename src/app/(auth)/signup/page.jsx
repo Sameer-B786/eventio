@@ -18,17 +18,24 @@ export default function SignUp() {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     setError('');
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
       // 1. Sign up the user
       const signupRes = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+
       const signupData = await signupRes.json();
       
       if (!signupRes.ok) {
@@ -37,27 +44,37 @@ export default function SignUp() {
 
       if (signupData.userConfirmed) {
         // Automatically try to log them in to redirect to dashboard
+        const loginController = new AbortController();
+        const loginTimeoutId = setTimeout(() => loginController.abort(), 10000);
+
         const loginRes = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
+          signal: loginController.signal
         });
+
+        clearTimeout(loginTimeoutId);
 
         if (loginRes.ok) {
           window.location.href = '/idgen';
           return; // Do not reset isLoading
         } else {
-          router.push('/login?message=signup_success_please_login');
+          window.location.href = '/login?message=signup_success_please_login';
           return; // Do not reset isLoading
         }
       } else {
         // User needs to confirm email via OTP
-        router.push(`/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`);
+        window.location.href = `/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`;
         return; // Do not reset isLoading
       }
       
     } catch (err) {
-      setError(err.message || 'An error occurred during sign up');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. The server took too long to respond.');
+      } else {
+        setError(err.message || 'An error occurred during sign up');
+      }
       setIsLoading(false);
     }
   };
@@ -172,7 +189,7 @@ export default function SignUp() {
           </div>
 
           <Button 
-            type="submit" 
+            type="button" 
             onClick={handleSignUp}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" 
             disabled={

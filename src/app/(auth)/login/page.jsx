@@ -16,19 +16,27 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     setError('');
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+
       if (res.ok) {
+        // Force navigation
         window.location.href = '/idgen';
-        // Do not reset isLoading here to keep the button in "Signing in..." state during navigation
+        // We purposely do not reset isLoading here so the spinner stays visible until the page reloads
       } else {
         let errorMessage = 'Invalid credentials';
         try {
@@ -39,7 +47,11 @@ export default function Login() {
         setIsLoading(false);
       }
     } catch (err) {
-      setError('An error occurred during login');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. The server took too long to respond.');
+      } else {
+        setError('An error occurred during login. Please try again.');
+      }
       setIsLoading(false);
     }
   };
@@ -101,7 +113,7 @@ export default function Login() {
             </div>
           </div>
 
-          <Button type="submit" onClick={handleLogin} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
+          <Button type="button" onClick={handleLogin} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
 
