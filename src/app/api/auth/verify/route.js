@@ -69,13 +69,15 @@ export async function POST(request) {
   } catch (error) {
     console.error('Verification error:', error);
     
-    let message = `An error occurred during verification: ${error.name} - ${error.message}`;
+    let message = 'An error occurred during verification. Please try again.';
     if (error.name === 'CodeMismatchException') {
-      message = 'Invalid verification code';
+      message = 'Invalid verification code.';
     } else if (error.name === 'ExpiredCodeException') {
-      message = 'Verification code has expired';
+      message = 'Verification code has expired.';
     } else if (error.name === 'NotAuthorizedException') {
-      message = 'User is already confirmed or invalid';
+      message = 'User is already confirmed or invalid.';
+    } else if (error.name === 'AliasExistsException') {
+      message = 'An account with this email already exists.';
     }
 
     return NextResponse.json({ error: message }, { status: 400 });

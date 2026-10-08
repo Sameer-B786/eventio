@@ -75,8 +75,8 @@ export async function POST(request) {
     console.error('Signup error:', error);
     
     let message = 'An error occurred during sign up';
-    if (error.name === 'UsernameExistsException') {
-      message = 'An account with this username already exists';
+    if (error.name === 'UsernameExistsException' || error.name === 'AliasExistsException') {
+      message = 'An account with the email already exists.';
     } else if (error.name === 'InvalidPasswordException') {
       message = 'Password does not meet requirements';
     } else if (error.name === 'InvalidParameterException') {
