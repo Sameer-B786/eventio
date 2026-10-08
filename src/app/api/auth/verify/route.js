@@ -24,7 +24,7 @@ export async function POST(request) {
 
     const client = new CognitoIdentityProviderClient({ 
       region: REGION,
-      credentials: { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY }
+      credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined
     });
     
     // We MUST use the actual UUID username if it's provided, otherwise fallback to email alias (which is buggy)

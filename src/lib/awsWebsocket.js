@@ -9,10 +9,7 @@ const ENDPOINT = process.env.EVENTIO_AWS_WSS_CONNECTION_URL;
 const apigwClient = new ApiGatewayManagementApiClient({
   region: process.env.AWS_REGION || "ap-south-1",
   endpoint: ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID || "dummy",
-    secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY || "dummy",
-  },
+  credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined,
 });
 
 /**

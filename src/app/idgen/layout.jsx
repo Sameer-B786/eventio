@@ -2,8 +2,15 @@ import { EventioSidebar } from '@/components/layout/IdgenSidebar';
 import { EventioTopbar } from '@/components/layout/IdgenTopbar';
 import { getSession } from "@/lib/session";
 
+import { redirect } from 'next/navigation';
+
 export default async function EventioLayout({ children }) {
   const session = await getSession();
+  
+  if (!session) {
+    redirect('/signin');
+  }
+
   const userName = session?.userInfo?.name || session?.userInfo?.email?.split('@')[0] || "User";
 
   return (

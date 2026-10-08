@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
-import { signIn } from 'next-auth/react';
+
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
@@ -46,13 +46,13 @@ export default function SignUp() {
 
       if (signupData.userConfirmed) {
         // Automatically try to log them in to redirect to dashboard
-        const result = await signIn('credentials', {
-          redirect: false,
-          username,
-          password,
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
         });
 
-        if (result?.error) {
+        if (!loginRes.ok) {
           setError('Account created, but automatic login failed. Please try signing in.');
           setIsLoading(false);
           return;

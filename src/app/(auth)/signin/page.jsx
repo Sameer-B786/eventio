@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -20,30 +19,29 @@ export default function Login() {
     setError('');
     
     try {
-      const signInPromise = signIn('credentials', {
-        redirect: false,
-        username,
-        password,
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+        signal: controller.signal
       });
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
-      );
+      clearTimeout(timeoutId);
 
-      const result = await Promise.race([signInPromise, timeoutPromise]);
-
-      if (result?.error) {
-        setError(result.error);
-        setIsLoading(false);
-      } else {
-        // NextAuth handles the session cookie, just force navigate
-        window.location.href = '/idgen';
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Authentication failed');
       }
+
+      window.location.href = '/idgen';
     } catch (err) {
-      if (err.message === 'TIMEOUT') {
+      if (err.name === 'AbortError') {
         setError('Request timed out. The server took too long to respond.');
       } else {
-        setError('An error occurred during login. Please try again.');
+        setError(err.message || 'An error occurred during login. Please try again.');
       }
       setIsLoading(false);
     }

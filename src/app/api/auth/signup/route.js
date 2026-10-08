@@ -31,7 +31,7 @@ export async function POST(request) {
     const REGION = process.env.COGNITO_REGION || 'ap-south-1';
     const client = new CognitoIdentityProviderClient({ 
       region: REGION,
-      credentials: { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY }
+      credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined
     });
     
     const clientId = process.env.COGNITO_CLIENT_ID;
