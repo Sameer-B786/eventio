@@ -67,13 +67,19 @@ export async function POST(request) {
     const response = await client.send(command);
 
     // Auto-confirm the user so no verification code is needed
-    if (userPoolId) {
-      const confirmCommand = new AdminConfirmSignUpCommand({
-        UserPoolId: userPoolId,
-        Username: generatedUsername,
-      });
-      await client.send(confirmCommand);
+    if (!userPoolId) {
+      throw new Error("Server configuration error: COGNITO_USER_POOL_ID is missing in the environment variables.");
     }
+    
+    if (!process.env.EVENTIO_AWS_ACCESS_KEY_ID) {
+      throw new Error("Server configuration error: EVENTIO_AWS_ACCESS_KEY_ID is missing in the environment variables.");
+    }
+
+    const confirmCommand = new AdminConfirmSignUpCommand({
+      UserPoolId: userPoolId,
+      Username: generatedUsername,
+    });
+    await client.send(confirmCommand);
 
     return NextResponse.json({ 
       success: true, 
