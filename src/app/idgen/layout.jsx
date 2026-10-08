@@ -5,13 +5,13 @@ import { getSession } from "@/lib/session";
 import { redirect } from 'next/navigation';
 
 export default async function EventioLayout({ children }) {
-  // TEMPORARILY DISABLED: Bypass authentication loop
-  // const session = await getSession();
-  // if (!session) {
-  //   redirect('/login');
-  // }
+  const session = await getSession();
+  
+  if (!session) {
+    redirect('/login');
+  }
 
-  const userName = "Test User";
+  const userName = session?.userInfo?.name || session?.userInfo?.email?.split('@')[0] || "User";
 
   return (
     <div className="flex h-screen bg-[#F3F4F6] p-4 gap-4 overflow-hidden">
