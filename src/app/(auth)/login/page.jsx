@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,14 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    // Autofill credentials if coming from verify flow
+    const tempEmail = sessionStorage.getItem('temp_email');
+    const tempPassword = sessionStorage.getItem('temp_password');
+    if (tempEmail) setEmail(tempEmail);
+    if (tempPassword) setPassword(tempPassword);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,11 +35,15 @@ export default function Login() {
       });
       
       if (res.ok) {
+        // Clean up temporary credentials
+        sessionStorage.removeItem('temp_email');
+        sessionStorage.removeItem('temp_password');
+        
         router.push('/idgen');
         router.refresh();
       } else {
         const data = await res.json();
-        setError(data.error || 'Invalid credentials');
+        setError(data.error || 'User doesn\'t exist or invalid credentials');
       }
     } catch (err) {
       setError('An error occurred during login');

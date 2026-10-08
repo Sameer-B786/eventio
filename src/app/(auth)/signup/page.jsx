@@ -9,24 +9,26 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 export default function SignUp() {
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const router = useRouter();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMsg('');
     
     try {
       // 1. Sign up the user
       const signupRes = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
       
       const signupData = await signupRes.json();
@@ -35,28 +37,19 @@ export default function SignUp() {
         throw new Error(signupData.error || 'Sign up failed');
       }
 
-      if (signupData.userConfirmed) {
-        // Automatically try to log them in to redirect to dashboard
-        const loginRes = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-        });
+      setSuccessMsg('A verification code has been sent to your email.');
+      
+      // Temporarily store credentials for autofill after verification
+      sessionStorage.setItem('temp_email', email);
+      sessionStorage.setItem('temp_password', password);
 
-        if (loginRes.ok) {
-          router.push('/idgen');
-          router.refresh();
-        } else {
-          router.push('/login?message=signup_success_please_login');
-        }
-      } else {
+      setTimeout(() => {
         // User needs to confirm email via OTP
-        router.push(`/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`);
-      }
+        router.push(`/verify?email=${encodeURIComponent(email)}`);
+      }, 2000);
       
     } catch (err) {
       setError(err.message || 'An error occurred during sign up');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -74,22 +67,24 @@ export default function SignUp() {
         
         <form autoComplete="off" className="space-y-4" onSubmit={handleSignUp}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
+          {successMsg && <div className="p-3 bg-green-50 text-green-700 text-sm rounded-2xl text-center flex items-center justify-center gap-2"><CheckCircle2 className="h-4 w-4" /> {successMsg}</div>}
           
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="name">Full Name</Label>
             <div className="mt-1">
               <Input 
-                id="username" 
-                name="username" 
+                id="name" 
+                name="name" 
                 type="text" 
+                placeholder="John Doe" 
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
-                pattern="^\S+$"
-                title="Username cannot contain spaces"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                
+                
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="rounded-xl"
               />
             </div>

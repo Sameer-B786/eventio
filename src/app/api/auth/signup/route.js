@@ -13,14 +13,10 @@ function calculateSecretHash(username, clientId) {
 
 export async function POST(request) {
   try {
-    const { email, password, username } = await request.json();
+    const { email, password, name } = await request.json();
 
-    if (!email || !password || !username) {
-      return NextResponse.json({ error: 'Username, email and password are required' }, { status: 400 });
-    }
-
-    if (username.includes(' ')) {
-      return NextResponse.json({ error: 'Username cannot contain spaces' }, { status: 400 });
+    if (!email || !password || !name) {
+      return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
     }
 
     const emailDomain = email.split('@')[1]?.toLowerCase();
@@ -35,15 +31,13 @@ export async function POST(request) {
     });
     
     const clientId = process.env.COGNITO_CLIENT_ID;
-    console.log('DEBUG: COGNITO_CLIENT_ID is:', clientId ? 'Set' : 'UNDEFINED');
-    
     if (!clientId) {
       console.error('CRITICAL: COGNITO_CLIENT_ID environment variable is missing.');
-      return NextResponse.json({ error: 'Server configuration error: Missing Cognito Client ID. Please restart your Next.js dev server if you just added it to .env.local' }, { status: 500 });
+      return NextResponse.json({ error: 'Server configuration error: Missing Cognito Client ID.' }, { status: 500 });
     }
 
-    // Use the provided username as the Cognito Username
-    const generatedUsername = username;
+    // Generate a unique UUID for the Cognito Username so users don't have to provide one
+    const generatedUsername = crypto.randomUUID();
     const secretHash = calculateSecretHash(generatedUsername, clientId);
 
     const userAttributes = [
@@ -52,19 +46,14 @@ export async function POST(request) {
         Value: email,
       },
       {
-        Name: 'preferred_username',
-        Value: username,
+        Name: 'name',
+        Value: name,
       },
       {
-        Name: 'name',
-        Value: username, // Providing username as name to satisfy the schema requirement
+        Name: 'updated_at',
+        Value: Math.floor(Date.now() / 1000).toString(),
       }
     ];
-
-    userAttributes.push({
-      Name: 'updated_at',
-      Value: Math.floor(Date.now() / 1000).toString(),
-    });
 
     const command = new SignUpCommand({
       ClientId: clientId,
@@ -75,20 +64,6 @@ export async function POST(request) {
     });
 
     const response = await client.send(command);
-
-    // Auto-confirm in development if admin credentials are provided
-    if (!response.UserConfirmed && process.env.EVENTIO_AWS_ACCESS_KEY_ID && process.env.COGNITO_USER_POOL_ID) {
-      try {
-        const { AdminConfirmSignUpCommand } = require('@aws-sdk/client-cognito-identity-provider');
-        await client.send(new AdminConfirmSignUpCommand({
-          UserPoolId: process.env.COGNITO_USER_POOL_ID,
-          Username: generatedUsername
-        }));
-        response.UserConfirmed = true;
-      } catch (confirmErr) {
-        console.error('Auto-confirm failed:', confirmErr);
-      }
-    }
 
     return NextResponse.json({ 
       success: true, 

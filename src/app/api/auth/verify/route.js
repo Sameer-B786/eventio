@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CognitoIdentityProviderClient, ConfirmSignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { CognitoIdentityProviderClient, ConfirmSignUpCommand, ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 
 const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
@@ -16,7 +16,7 @@ function calculateSecretHash(username) {
 
 export async function POST(request) {
   try {
-    const { email, code, username } = await request.json();
+    const { email, code } = await request.json();
 
     if (!email || !code) {
       return NextResponse.json({ error: 'Email and verification code are required' }, { status: 400 });
@@ -27,8 +27,24 @@ export async function POST(request) {
       credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined
     });
     
-    // We MUST use the actual UUID username if it's provided, otherwise fallback to email alias (which is buggy)
-    const actualUsername = username || email;
+    let actualUsername = email;
+
+    if (email.includes('@') && process.env.COGNITO_USER_POOL_ID && process.env.EVENTIO_AWS_ACCESS_KEY_ID) {
+      try {
+        const listCommand = new ListUsersCommand({
+          UserPoolId: process.env.COGNITO_USER_POOL_ID,
+          Filter: `email = "${email}"`,
+          Limit: 1
+        });
+        const usersRes = await client.send(listCommand);
+        if (usersRes.Users && usersRes.Users.length > 0) {
+          actualUsername = usersRes.Users[0].Username;
+        }
+      } catch (lookupErr) {
+        console.error("Email lookup failed:", lookupErr);
+      }
+    }
+
     const secretHash = calculateSecretHash(actualUsername);
 
     const command = new ConfirmSignUpCommand({
