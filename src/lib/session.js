@@ -29,7 +29,7 @@ export async function createSession(sessionData) {
   
   cookieStore.set("session", encryptedSessionData, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_API_URL?.includes('localhost'),
+    secure: process.env.NODE_ENV === "production" && process.env.SECURE_COOKIE === "true",
     sameSite: "lax",
     path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 days
