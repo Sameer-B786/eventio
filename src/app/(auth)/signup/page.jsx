@@ -10,7 +10,6 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async (e) => {
@@ -32,16 +31,13 @@ export default function SignUp() {
         throw new Error(data.error || 'Sign up failed');
       }
 
-      setSuccess('Account created successfully! Redirecting...');
       // Store credentials for autofill on login page every time
       localStorage.setItem('saved_email', email);
       localStorage.setItem('saved_password', password);
       sessionStorage.setItem('signup_success', 'true');
       
-      setTimeout(() => {
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = '/login';
-      }, 1500);
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = '/login';
     } catch (err) {
       setError(err.message);
     } finally {
@@ -57,7 +53,6 @@ export default function SignUp() {
       </div>
       
       {error && <div className="p-3 mb-6 bg-red-50 text-red-600 text-sm rounded-xl text-center border border-red-100">{error}</div>}
-      {success && <div className="p-3 mb-6 bg-green-50 text-green-600 text-sm rounded-xl text-center border border-green-100">{success}</div>}
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <div>

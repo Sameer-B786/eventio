@@ -8,6 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -17,6 +18,11 @@ export default function Login() {
     if (savedEmail) setEmail(savedEmail);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedPassword) setPassword(savedPassword);
+
+    if (sessionStorage.getItem('signup_success')) {
+      setSuccess('Account created successfully! Please sign in.');
+      sessionStorage.removeItem('signup_success');
+    }
   }, []);
 
   const handleLogin = async (e) => {
@@ -53,6 +59,7 @@ export default function Login() {
         <p className="text-gray-500 mt-2">Welcome back!</p>
       </div>
       
+      {success && <div className="p-3 mb-6 bg-green-50 text-green-600 text-sm rounded-xl text-center border border-green-100">{success}</div>}
       {error && <div className="p-3 mb-6 bg-red-50 text-red-600 text-sm rounded-xl text-center border border-red-100">{error}</div>}
 
       <form onSubmit={handleLogin} className="space-y-5">
