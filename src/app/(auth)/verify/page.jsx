@@ -14,7 +14,9 @@ function VerifyForm() {
   const [email, setEmail] = useState(emailParam);
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const [resendMessage, setResendMessage] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
@@ -22,6 +24,7 @@ function VerifyForm() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setResendMessage('');
     
     try {
       const res = await fetch('/api/auth/verify', {
@@ -43,6 +46,30 @@ function VerifyForm() {
       setError('An error occurred during verification');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setIsResending(true);
+    setError('');
+    setResendMessage('');
+    try {
+      const res = await fetch('/api/auth/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setResendMessage('Verification code resent successfully.');
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to resend code');
+      }
+    } catch (err) {
+      setError('An error occurred while resending the code');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -103,10 +130,24 @@ function VerifyForm() {
             {isLoading ? "Verifying..." : "Verify Account"}
           </Button>
 
-          <div className="text-center text-sm text-gray-500 mt-4">
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Back to login
-            </Link>
+          <div className="text-center text-sm text-gray-500 mt-4 space-y-2">
+            <div>
+              Didn't receive the code?{' '}
+              <button 
+                type="button" 
+                onClick={handleResend}
+                disabled={isResending}
+                className="font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                {isResending ? "Resending..." : "Resend it"}
+              </button>
+            </div>
+            {resendMessage && <div className="text-green-600 text-sm mt-1">{resendMessage}</div>}
+            <div className="pt-2">
+              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                Back to login
+              </Link>
+            </div>
           </div>
         </form>
       ) : (

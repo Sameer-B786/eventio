@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CognitoIdentityProviderClient, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { CognitoIdentityProviderClient, SignUpCommand, AdminConfirmSignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 
 function calculateSecretHash(username, clientId) {
@@ -31,6 +31,7 @@ export async function POST(request) {
     });
     
     const clientId = process.env.COGNITO_CLIENT_ID;
+    const userPoolId = process.env.COGNITO_USER_POOL_ID;
     if (!clientId) {
       console.error('CRITICAL: COGNITO_CLIENT_ID environment variable is missing.');
       return NextResponse.json({ error: 'Server configuration error: Missing Cognito Client ID.' }, { status: 500 });
@@ -64,6 +65,15 @@ export async function POST(request) {
     });
 
     const response = await client.send(command);
+
+    // Auto-confirm the user so no verification code is needed
+    if (userPoolId) {
+      const confirmCommand = new AdminConfirmSignUpCommand({
+        UserPoolId: userPoolId,
+        Username: generatedUsername,
+      });
+      await client.send(confirmCommand);
+    }
 
     return NextResponse.json({ 
       success: true, 

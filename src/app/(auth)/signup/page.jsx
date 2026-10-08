@@ -37,15 +37,14 @@ export default function SignUp() {
         throw new Error(signupData.error || 'Sign up failed');
       }
 
-      setSuccessMsg('A verification code has been sent to your email.');
+      setSuccessMsg('Account created successfully! Redirecting to login...');
       
-      // Temporarily store credentials for autofill after verification
+      // Temporarily store credentials for autofill
       sessionStorage.setItem('temp_email', email);
       sessionStorage.setItem('temp_password', password);
 
       setTimeout(() => {
-        // User needs to confirm email via OTP
-        router.push(`/verify?email=${encodeURIComponent(email)}`);
+        router.push('/login');
       }, 2000);
       
     } catch (err) {
