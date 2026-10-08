@@ -63,6 +63,7 @@ export default function EventsPage() {
               <Card key={event.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                 {event.bannerUrl && (
                   <div className="h-48 w-full relative bg-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={event.bannerUrl} 
                       alt={event.name} 

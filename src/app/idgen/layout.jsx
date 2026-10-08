@@ -8,7 +8,7 @@ export default async function EventioLayout({ children }) {
   const session = await getSession();
   
   if (!session) {
-    redirect('/signin');
+    redirect('/login');
   }
 
   const userName = session?.userInfo?.name || session?.userInfo?.email?.split('@')[0] || "User";

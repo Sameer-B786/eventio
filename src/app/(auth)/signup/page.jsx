@@ -8,8 +8,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
-
-
 export default function SignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -20,24 +18,17 @@ export default function SignUp() {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    if (isLoading) return;
     setIsLoading(true);
     setError('');
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
       // 1. Sign up the user
       const signupRes = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
-        signal: controller.signal
       });
       
-      clearTimeout(timeoutId);
-
       const signupData = await signupRes.json();
       
       if (!signupRes.ok) {
@@ -52,26 +43,20 @@ export default function SignUp() {
           body: JSON.stringify({ username, password }),
         });
 
-        if (!loginRes.ok) {
-          setError('Account created, but automatic login failed. Please try signing in.');
-          setIsLoading(false);
-          return;
+        if (loginRes.ok) {
+          router.push('/idgen');
+          router.refresh();
         } else {
-          window.location.href = '/idgen';
-          return; // Do not reset isLoading
+          router.push('/login?message=signup_success_please_login');
         }
       } else {
         // User needs to confirm email via OTP
-        window.location.href = `/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`;
-        return; // Do not reset isLoading
+        router.push(`/verify?email=${encodeURIComponent(email)}&username=${encodeURIComponent(signupData.username || username)}`);
       }
       
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. The server took too long to respond.');
-      } else {
-        setError(err.message || 'An error occurred during sign up');
-      }
+      setError(err.message || 'An error occurred during sign up');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -87,17 +72,17 @@ export default function SignUp() {
           <p className="text-gray-500 mt-2">Create a new account</p>
         </div>
         
-        <form className="space-y-6" onSubmit={handleSignUp}>
+        <form autoComplete="off" className="space-y-4" onSubmit={handleSignUp}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
             <Label htmlFor="username">Username</Label>
-            <div className="mt-2">
+            <div className="mt-1">
               <Input 
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="username"
+                autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -129,12 +114,12 @@ export default function SignUp() {
 
           <div>
             <Label htmlFor="email">Email Address</Label>
-            <div className="mt-2">
+            <div className="mt-1">
               <Input 
                 id="email" 
                 name="email" 
                 type="email" 
-                autoComplete="email"
+                autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -147,12 +132,12 @@ export default function SignUp() {
 
           <div>
             <Label htmlFor="password">Password</Label>
-            <div className="mt-2">
+            <div className="mt-1">
               <Input 
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="new-password"
+                autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
@@ -187,7 +172,7 @@ export default function SignUp() {
 
           <Button 
             type="submit" 
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5" 
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-5" 
             disabled={
               isLoading || 
               (password.length > 0 && !(
@@ -205,7 +190,7 @@ export default function SignUp() {
 
           <div className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
-            <Link href="/signin" className="font-medium text-primary hover:text-primary/80">
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
               Sign in
             </Link>
           </div>

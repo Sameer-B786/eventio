@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
@@ -11,38 +12,30 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (isLoading) return;
     setIsLoading(true);
     setError('');
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      const response = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-        signal: controller.signal
       });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Authentication failed');
-      }
-
-      window.location.href = '/idgen';
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. The server took too long to respond.');
+      
+      if (res.ok) {
+        router.push('/idgen');
+        router.refresh();
       } else {
-        setError(err.message || 'An error occurred during login. Please try again.');
+        const data = await res.json();
+        setError(data.error || 'Invalid credentials');
       }
+    } catch (err) {
+      setError('An error occurred during login');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -55,10 +48,9 @@ export default function Login() {
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Eventio</h2>
-          <p className="text-gray-500 mt-2">Sign in to your account</p>
         </div>
         
-        <form className="space-y-6" onSubmit={handleLogin}>
+        <form autoComplete="off" className="space-y-6" onSubmit={handleLogin}>
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
@@ -68,10 +60,11 @@ export default function Login() {
                 id="username" 
                 name="username" 
                 type="text" 
-                autoComplete="username"
+                autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
+                pattern="^\S+$"
                 title="Username cannot contain spaces"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -92,7 +85,7 @@ export default function Login() {
                 id="password" 
                 name="password" 
                 type="password" 
-                autoComplete="current-password"
+                autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 

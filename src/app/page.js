@@ -22,7 +22,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-4">
             <Link 
-              href="/signin" 
+              href="/login" 
               className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2"
             >
               Get Started <ArrowRight className="h-4 w-4" />
@@ -51,7 +51,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
-              href="/signin" 
+              href="/login" 
               className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-gray-900 hover:bg-indigo-600 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
             >
               Start for Free
@@ -193,7 +193,7 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold text-white mb-6">Ready to streamline your workflow?</h2>
           <p className="text-indigo-200 mb-10 text-lg">Join thousands of organizers saving hundreds of hours on event administration.</p>
           <Link 
-            href="/signin" 
+            href="/login" 
             className="inline-flex px-8 py-4 text-base font-bold text-indigo-900 bg-white hover:bg-gray-100 rounded-full shadow-lg transition-all"
           >
             Create Your Account
@@ -217,7 +217,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm">
                 <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
                 <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
-                <li><Link href="/signin" className="hover:text-white transition-colors">Sign In</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Sign In</Link></li>
               </ul>
             </div>
             <div>

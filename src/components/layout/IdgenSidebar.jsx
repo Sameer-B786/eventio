@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 export function EventioSidebar({ userName = "admin" }) {
   const [openMenu, setOpenMenu] = useState({});
   const [allEvents, setAllEvents] = useState([]);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const pathname = usePathname();
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function EventioSidebar({ userName = "admin" }) {
     } catch (e) {
       console.error(e);
     }
-    window.location.href = '/signin';
+    router.push('/login');
   };
 
   if (pathname === '/idgen') return null;
