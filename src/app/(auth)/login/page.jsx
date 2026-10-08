@@ -1,17 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const tempEmail = sessionStorage.getItem('temp_email');
+    const savedEmail = localStorage.getItem('saved_email');
+    const savedPassword = localStorage.getItem('saved_password');
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (tempEmail) setEmail(tempEmail);
+    if (savedEmail) setEmail(savedEmail);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (savedPassword) setPassword(savedPassword);
   }, []);
 
   const handleLogin = async (e) => {
@@ -27,7 +32,7 @@ export default function Login() {
       });
 
       if (res.ok) {
-        sessionStorage.removeItem('temp_email');
+        // Keep credentials in localStorage for autofilling every time
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/idgen'; // Hard redirect to bypass Next.js cache bugs
       } else {
@@ -64,13 +69,22 @@ export default function Login() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pr-12"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
         </div>
 
         <button

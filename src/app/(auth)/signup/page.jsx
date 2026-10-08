@@ -1,13 +1,16 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async (e) => {
@@ -29,10 +32,16 @@ export default function SignUp() {
         throw new Error(data.error || 'Sign up failed');
       }
 
-      // Temporarily store email for autofill on login page
-      sessionStorage.setItem('temp_email', email);
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = '/login';
+      setSuccess('Account created successfully! Redirecting...');
+      // Store credentials for autofill on login page every time
+      localStorage.setItem('saved_email', email);
+      localStorage.setItem('saved_password', password);
+      sessionStorage.setItem('signup_success', 'true');
+      
+      setTimeout(() => {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = '/login';
+      }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,6 +57,7 @@ export default function SignUp() {
       </div>
       
       {error && <div className="p-3 mb-6 bg-red-50 text-red-600 text-sm rounded-xl text-center border border-red-100">{error}</div>}
+      {success && <div className="p-3 mb-6 bg-green-50 text-green-600 text-sm rounded-xl text-center border border-green-100">{success}</div>}
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <div>
@@ -74,14 +84,23 @@ export default function SignUp() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            minLength={8}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={8}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none pr-12"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
         </div>
 
         <button
