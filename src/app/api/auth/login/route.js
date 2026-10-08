@@ -74,10 +74,8 @@ export async function POST(request) {
       const idToken = response.AuthenticationResult.IdToken;
       const decoded = decodeJwt(idToken);
       
-      // Create session with tokens and extracted userInfo
+      // Create session with extracted userInfo (DO NOT store raw tokens to avoid 4KB cookie limit)
       await createSession({
-        accessToken: response.AuthenticationResult.AccessToken,
-        idToken,
         userInfo: {
           email: decoded.email,
           name: decoded.name || decoded.email?.split('@')[0],
