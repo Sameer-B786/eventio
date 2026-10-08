@@ -13,16 +13,10 @@ function calculateSecretHash(username, clientId) {
 
 export async function POST(request) {
   try {
-    const { email, password, name, honeypot } = await request.json();
+    const { email, password, name } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
-    }
-
-    // HONEYPOT Verification
-    if (honeypot && honeypot !== '') {
-      // It's a bot!
-      return NextResponse.json({ error: 'Bot activity detected.' }, { status: 400 });
     }
 
     const REGION = process.env.COGNITO_REGION || 'ap-south-1';

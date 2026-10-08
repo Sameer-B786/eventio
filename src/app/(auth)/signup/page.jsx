@@ -7,9 +7,6 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // HONEYPOT FIELD: Invisible to humans. Bots will fill this out and we will reject them.
-  const [website, setWebsite] = useState(''); 
-  
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,19 +14,13 @@ export default function SignUp() {
     e.preventDefault();
     setError('');
 
-    // If the honeypot is filled out, it's a bot!
-    if (website !== '') {
-      setError('Bot activity detected.');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, honeypot: website }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await res.json();
@@ -67,19 +58,6 @@ export default function SignUp() {
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
             value={name}
             onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        
-        {/* INVISIBLE HONEYPOT FIELD FOR BOTS */}
-        <div style={{ display: 'none' }} aria-hidden="true">
-          <label>Website</label>
-          <input
-            type="text"
-            name="website"
-            tabIndex="-1"
-            autoComplete="off"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
           />
         </div>
 
