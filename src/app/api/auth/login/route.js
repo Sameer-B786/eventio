@@ -74,15 +74,24 @@ export async function POST(request) {
       const idToken = response.AuthenticationResult.IdToken;
       const decoded = decodeJwt(idToken);
       
-      // Create session with extracted userInfo (DO NOT store raw tokens to avoid 4KB cookie limit)
-      await createSession({
+      // Create session with extracted userInfo
+      const sessionString = await createSession({
         userInfo: {
           email: decoded.email,
           name: decoded.name || decoded.email?.split('@')[0],
         }
       });
 
-      return NextResponse.json({ success: true });
+      const responseObj = NextResponse.json({ success: true });
+      responseObj.cookies.set("session", sessionString, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      });
+      
+      return responseObj;
     }
 
     // Handle challenges like NEW_PASSWORD_REQUIRED if needed

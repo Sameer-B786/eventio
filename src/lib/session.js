@@ -25,15 +25,7 @@ export async function decrypt(input) {
 
 export async function createSession(sessionData) {
   const encryptedSessionData = await encrypt(sessionData);
-  const cookieStore = await cookies();
-  
-  cookieStore.set("session", encryptedSessionData, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  });
+  return encryptedSessionData;
 }
 
 export async function getSession() {
