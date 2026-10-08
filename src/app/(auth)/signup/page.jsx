@@ -1,23 +1,25 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
+  // HONEYPOT FIELD: Invisible to humans. Bots will fill this out and we will reject them.
+  const [website, setWebsite] = useState(''); 
+  
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState(null);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!turnstileToken) {
-      setError('Please complete the CAPTCHA verification');
+    // If the honeypot is filled out, it's a bot!
+    if (website !== '') {
+      setError('Bot activity detected.');
       return;
     }
 
@@ -27,7 +29,7 @@ export default function SignUp() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, captchaToken: turnstileToken }),
+        body: JSON.stringify({ name, email, password, honeypot: website }),
       });
 
       const data = await res.json();
@@ -66,6 +68,19 @@ export default function SignUp() {
             onChange={(e) => setName(e.target.value)}
           />
         </div>
+        
+        {/* INVISIBLE HONEYPOT FIELD FOR BOTS */}
+        <div style={{ display: 'none' }} aria-hidden="true">
+          <label>Website</label>
+          <input
+            type="text"
+            name="website"
+            tabIndex="-1"
+            autoComplete="off"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+          />
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -90,24 +105,9 @@ export default function SignUp() {
           />
         </div>
 
-        <div className="flex justify-center pt-2">
-          {/* Automatically fallback if key is missing to not block UI during dev */}
-          {process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY ? (
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY}
-              onSuccess={(token) => setTurnstileToken(token)}
-              options={{ theme: 'light' }}
-            />
-          ) : (
-            <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded w-full text-center">
-              CAPTCHA Site Key missing. Please set NEXT_PUBLIC_CAPTCHA_SITE_KEY.
-            </div>
-          )}
-        </div>
-
         <button
           type="submit"
-          disabled={isLoading || (!turnstileToken && process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY)}
+          disabled={isLoading}
           className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50 mt-2"
         >
           {isLoading ? 'Creating account...' : 'Create Account'}

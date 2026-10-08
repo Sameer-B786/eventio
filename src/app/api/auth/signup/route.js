@@ -13,25 +13,16 @@ function calculateSecretHash(username, clientId) {
 
 export async function POST(request) {
   try {
-    const { email, password, name, captchaToken } = await request.json();
+    const { email, password, name, honeypot } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
     }
 
-    // CAPTCHA Verification
-    if (process.env.CAPTCHA_SECRET_KEY && captchaToken) {
-      const captchaRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `secret=${process.env.CAPTCHA_SECRET_KEY}&response=${captchaToken}`,
-      });
-      const captchaData = await captchaRes.json();
-      if (!captchaData.success) {
-        return NextResponse.json({ error: 'CAPTCHA verification failed. Please try again.' }, { status: 400 });
-      }
+    // HONEYPOT Verification
+    if (honeypot && honeypot !== '') {
+      // It's a bot!
+      return NextResponse.json({ error: 'Bot activity detected.' }, { status: 400 });
     }
 
     const REGION = process.env.COGNITO_REGION || 'ap-south-1';
