@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
       
       if (res.ok) {
@@ -54,21 +54,21 @@ export default function Login() {
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
-            <Label htmlFor="username">Username (NOT Email)</Label>
+            <Label htmlFor="email">Email or Username</Label>
             <div className="mt-2">
               <Input 
-                id="username" 
-                name="username" 
+                id="email" 
+                name="email" 
                 type="text"
-                placeholder="Enter your unique username"
+                placeholder="Enter your email or username"
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
                 required 
-                pattern="^\S+$"
-                title="Username cannot contain spaces"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                
+                
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="rounded-xl"
               />
             </div>

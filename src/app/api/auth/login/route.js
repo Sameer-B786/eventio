@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CognitoIdentityProviderClient, InitiateAuthCommand } from '@aws-sdk/client-cognito-identity-provider';
+import { CognitoIdentityProviderClient, InitiateAuthCommand, ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 import { createSession } from '@/lib/session';
 import { decodeJwt } from 'jose';
@@ -18,23 +18,44 @@ function calculateSecretHash(username) {
 
 export async function POST(request) {
   try {
-    const { username, password } = await request.json();
+    const { email, username, password } = await request.json();
+    const loginIdentifier = email || username;
 
-    if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
+    if (!loginIdentifier || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
     const client = new CognitoIdentityProviderClient({ 
       region: REGION,
       credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined
     });
-    const secretHash = calculateSecretHash(username);
+
+    let actualUsername = loginIdentifier;
+
+    // Look up the actual username if they provided an email
+    if (loginIdentifier.includes('@') && process.env.COGNITO_USER_POOL_ID && process.env.EVENTIO_AWS_ACCESS_KEY_ID) {
+      try {
+        const listCommand = new ListUsersCommand({
+          UserPoolId: process.env.COGNITO_USER_POOL_ID,
+          Filter: `email = "${loginIdentifier}"`,
+          Limit: 1
+        });
+        const usersRes = await client.send(listCommand);
+        if (usersRes.Users && usersRes.Users.length > 0) {
+          actualUsername = usersRes.Users[0].Username;
+        }
+      } catch (lookupErr) {
+        console.error("Email lookup failed:", lookupErr);
+      }
+    }
+
+    const secretHash = calculateSecretHash(actualUsername);
 
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: CLIENT_ID,
       AuthParameters: {
-        USERNAME: username,
+        USERNAME: actualUsername,
         PASSWORD: password,
         SECRET_HASH: secretHash,
       },
