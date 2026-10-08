@@ -39,8 +39,7 @@ export default function Login() {
         sessionStorage.removeItem('temp_email');
         sessionStorage.removeItem('temp_password');
         
-        router.push('/idgen');
-        router.refresh(); // Ensure the layout re-fetches the session
+        window.location.href = '/idgen';
       } else {
         const data = await res.json();
         setError(data.error || 'User doesn\'t exist or invalid credentials');
