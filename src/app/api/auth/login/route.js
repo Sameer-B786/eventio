@@ -37,12 +37,19 @@ export async function POST(request) {
       try {
         const listCommand = new ListUsersCommand({
           UserPoolId: process.env.COGNITO_USER_POOL_ID,
-          Filter: `email = "${loginIdentifier}"`,
-          Limit: 1
+          Filter: `email = "${loginIdentifier}"`
         });
         const usersRes = await client.send(listCommand);
         if (usersRes.Users && usersRes.Users.length > 0) {
-          actualUsername = usersRes.Users[0].Username;
+          // Find the most recently created CONFIRMED user
+          const confirmedUsers = usersRes.Users.filter(u => u.UserStatus === 'CONFIRMED');
+          if (confirmedUsers.length > 0) {
+            confirmedUsers.sort((a, b) => new Date(b.UserCreateDate) - new Date(a.UserCreateDate));
+            actualUsername = confirmedUsers[0].Username;
+          } else {
+            usersRes.Users.sort((a, b) => new Date(b.UserCreateDate) - new Date(a.UserCreateDate));
+            actualUsername = usersRes.Users[0].Username;
+          }
         }
       } catch (lookupErr) {
         console.error("Email lookup failed:", lookupErr);
