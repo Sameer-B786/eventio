@@ -83,13 +83,14 @@ export async function POST(request) {
       });
 
       const responseObj = NextResponse.json({ success: true });
-      responseObj.cookies.set("session", sessionString, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      });
+      
+      const isProd = process.env.NODE_ENV === "production";
+      const secureFlag = isProd ? "Secure;" : "";
+      
+      responseObj.headers.append(
+        'Set-Cookie', 
+        `session=${sessionString}; Path=/; HttpOnly; SameSite=Lax; ${secureFlag} Max-Age=2592000`
+      );
       
       return responseObj;
     }
