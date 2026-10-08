@@ -99,7 +99,7 @@ export async function POST(request) {
     } else if (error.name === 'UserNotFoundException') {
       message = 'User does not exist';
     } else if (error.name === 'UserNotConfirmedException') {
-      message = 'Please confirm your email address before logging in';
+      message = 'Your account setup is incomplete. Please sign up again or contact support.';
     }
 
     return NextResponse.json({ error: message }, { status: 401 });

@@ -15,7 +15,7 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    // Autofill credentials if coming from verify flow
+    // Autofill credentials if coming from signup flow
     const tempEmail = sessionStorage.getItem('temp_email');
     const tempPassword = sessionStorage.getItem('temp_password');
     if (tempEmail) setEmail(tempEmail);
