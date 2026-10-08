@@ -1,9 +1,9 @@
 "use client";
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, forwardRef } from 'react';
 import { Image as KonvaImage } from 'react-konva';
 import { generateBarcodeDataUrl } from '@/lib/barcodeGenerator';
 
-export default function DynamicBarcodeNode({ element, record }) {
+const DynamicBarcodeNode = forwardRef(({ element, record, ...props }, ref) => {
   const [image, setImage] = useState(null);
   const value = record?.[element.fieldMapping];
   
@@ -23,11 +23,16 @@ export default function DynamicBarcodeNode({ element, record }) {
 
   return (
     <KonvaImage
+      ref={ref}
       x={element.x}
       y={element.y}
       width={element.width}
       height={element.height}
       image={image}
+      draggable={element.draggable || false}
+      {...props}
     />
   );
-}
+});
+
+export default DynamicBarcodeNode;

@@ -4,13 +4,14 @@ import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import ExcelDropzone from '@/components/upload/ExcelDropzone';
-import TemplateJsonUploader from '@/components/upload/TemplateJsonUploader';
+import TemplateImageUploader from '@/components/upload/TemplateImageUploader';
+import FieldToolbar from '@/components/editor/FieldToolbar';
 import BulkRenderEngine from '@/components/rendering/BulkRenderEngine';
 import { useGeneratorStore } from '@/store/useGeneratorStore';
 
 // SSR Guard for Konva
-const KonvaPreviewStage = dynamic(
-  () => import('@/components/canvas/KonvaPreviewStage'),
+const InteractiveTemplateEditor = dynamic(
+  () => import('@/components/canvas/InteractiveTemplateEditor'),
   { ssr: false }
 );
 
@@ -57,7 +58,8 @@ function IdCardGeneratorContent() {
             
             <div className="flex flex-col gap-6">
               <ExcelDropzone schemaType={schemaType} />
-              <TemplateJsonUploader />
+              <TemplateImageUploader />
+              <FieldToolbar />
             </div>
             
             <div className="border-t pt-6 mt-2">
@@ -73,10 +75,10 @@ function IdCardGeneratorContent() {
             <h2 className="text-lg font-bold mb-4 text-gray-800">Live Preview</h2>
             <div className="flex-1 flex items-center justify-center bg-gray-50 p-4 border border-gray-200 rounded-xl overflow-auto min-h-[500px]">
               {templateJson ? (
-                <KonvaPreviewStage templateJson={templateJson} record={previewRecord} />
+                <InteractiveTemplateEditor record={previewRecord} />
               ) : (
                 <div className="flex flex-col items-center justify-center text-gray-400 h-full w-full min-h-[300px]">
-                   <p>Upload a JSON template to see preview</p>
+                   <p>Upload a background template to start designing</p>
                 </div>
               )}
             </div>

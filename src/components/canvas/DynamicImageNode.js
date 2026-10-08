@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { Image as KonvaImage } from 'react-konva';
 
-export default function DynamicImageNode({ element, record }) {
+const DynamicImageNode = forwardRef(({ element, record, ...props }, ref) => {
   const [image, setImage] = useState(null);
   const src = record?.[element.fieldMapping] || element.src;
 
@@ -24,6 +24,7 @@ export default function DynamicImageNode({ element, record }) {
 
   return (
     <KonvaImage
+      ref={ref}
       x={element.x}
       y={element.y}
       width={element.width}
@@ -31,6 +32,9 @@ export default function DynamicImageNode({ element, record }) {
       image={image}
       cornerRadius={element.borderRadius || 0}
       draggable={element.draggable || false}
+      {...props}
     />
   );
-}
+});
+
+export default DynamicImageNode;
