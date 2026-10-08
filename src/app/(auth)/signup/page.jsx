@@ -40,6 +40,7 @@ export default function SignUp() {
 
       // Temporarily store email for autofill on login page
       sessionStorage.setItem('temp_email', email);
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = '/login';
     } catch (err) {
       setError(err.message);

@@ -10,6 +10,7 @@ export default function Login() {
 
   useEffect(() => {
     const tempEmail = sessionStorage.getItem('temp_email');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (tempEmail) setEmail(tempEmail);
   }, []);
 
@@ -27,6 +28,7 @@ export default function Login() {
 
       if (res.ok) {
         sessionStorage.removeItem('temp_email');
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/idgen'; // Hard redirect to bypass Next.js cache bugs
       } else {
         const data = await res.json();
@@ -81,7 +83,7 @@ export default function Login() {
       </form>
 
       <div className="mt-6 text-center text-sm text-gray-500">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/signup" className="text-indigo-600 hover:text-indigo-700 font-semibold">
           Sign up
         </Link>
