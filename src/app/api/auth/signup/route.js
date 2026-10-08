@@ -76,6 +76,20 @@ export async function POST(request) {
 
     const response = await client.send(command);
 
+    // Auto-confirm in development if admin credentials are provided
+    if (!response.UserConfirmed && process.env.EVENTIO_AWS_ACCESS_KEY_ID && process.env.COGNITO_USER_POOL_ID) {
+      try {
+        const { AdminConfirmSignUpCommand } = require('@aws-sdk/client-cognito-identity-provider');
+        await client.send(new AdminConfirmSignUpCommand({
+          UserPoolId: process.env.COGNITO_USER_POOL_ID,
+          Username: generatedUsername
+        }));
+        response.UserConfirmed = true;
+      } catch (confirmErr) {
+        console.error('Auto-confirm failed:', confirmErr);
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       userConfirmed: response.UserConfirmed,

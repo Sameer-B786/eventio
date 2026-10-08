@@ -16,21 +16,21 @@ function calculateSecretHash(username) {
 
 export async function POST(request) {
   try {
-    const { email, code, newPassword } = await request.json();
+    const { username, code, newPassword } = await request.json();
 
-    if (!email || !code || !newPassword) {
-      return NextResponse.json({ error: 'Email, code, and new password are required' }, { status: 400 });
+    if (!username || !code || !newPassword) {
+      return NextResponse.json({ error: 'username, code, and new password are required' }, { status: 400 });
     }
 
     const client = new CognitoIdentityProviderClient({ 
       region: REGION,
       credentials: process.env.EVENTIO_AWS_ACCESS_KEY_ID ? { accessKeyId: process.env.EVENTIO_AWS_ACCESS_KEY_ID, secretAccessKey: process.env.EVENTIO_AWS_SECRET_ACCESS_KEY } : undefined
     });
-    const secretHash = calculateSecretHash(email);
+    const secretHash = calculateSecretHash(username);
 
     const command = new ConfirmForgotPasswordCommand({
       ClientId: CLIENT_ID,
-      Username: email,
+      Username: username,
       ConfirmationCode: code,
       Password: newPassword,
       SecretHash: secretHash,

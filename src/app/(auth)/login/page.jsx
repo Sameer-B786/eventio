@@ -54,12 +54,13 @@ export default function Login() {
           {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-2xl text-center">{error}</div>}
           
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Username (NOT Email)</Label>
             <div className="mt-2">
               <Input 
                 id="username" 
                 name="username" 
-                type="text" 
+                type="text"
+                placeholder="Enter your unique username"
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"

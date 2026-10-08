@@ -8,12 +8,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
+  const [username, setusername] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1 = Request email, 2 = Verify code & new password, 3 = Success
+  const [step, setStep] = useState(1); // 1 = Request username, 2 = Verify code & new password, 3 = Success
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -26,7 +26,7 @@ export default function ForgotPassword() {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ username }),
       });
       
       const data = await res.json();
@@ -49,7 +49,7 @@ export default function ForgotPassword() {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, newPassword }),
+        body: JSON.stringify({ username, code, newPassword }),
       });
       
       const data = await res.json();
@@ -76,20 +76,20 @@ export default function ForgotPassword() {
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">{error}</div>}
             
             <p className="text-sm text-gray-600 text-center">
-              Enter your email address to receive a verification code to reset your password.
+              Enter your username to receive a verification code to reset your password.
             </p>
 
             <div>
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="username">Username</Label>
               <div className="mt-2">
                 <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  autoComplete="email" 
+                  id="username" 
+                  name="username" 
+                  type="text" 
+                  autoComplete="off" 
                   required 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setusername(e.target.value)}
                 />
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function ForgotPassword() {
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">{error}</div>}
             
             <p className="text-sm text-gray-600 text-center">
-              We&apos;ve sent a verification code to <span className="font-semibold">{email}</span>.
+              We&apos;ve sent a verification code to <span className="font-semibold">{username}</span>.
             </p>
 
             <div>
